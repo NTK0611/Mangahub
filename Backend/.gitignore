@@ -1,0 +1,4 @@
+data/mangahub.db
+*.exe
+*.test
+.env
