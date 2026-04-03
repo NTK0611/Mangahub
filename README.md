@@ -11,10 +11,12 @@
   - GET /users/library
   - PUT /users/progress
   - 35 manga seeded across 5 genres
-- # Week 3: TCP Progress Sync Server
+- # Week 3: Data Collection, TCP Server & API Integration
   - TCP server on port 9090
   - Multiple concurrent connections with goroutines
-  - JSON message protocol
   - Progress broadcasting to all connected clients
   - Connected to HTTP API (triggers on progress update)
-  | TCP | 9090 | Progress sync & broadcasting ✅ |
+  - MangaDex API integration (fetched 100+ manga)
+  - 107 total manga in database (35 manual + 72 MangaDex)
+  - Data validation and storage
+| TCP | 9090 | Progress sync & broadcasting ✅ |
