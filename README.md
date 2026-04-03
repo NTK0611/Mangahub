@@ -19,4 +19,10 @@
   - MangaDex API integration (fetched 100+ manga)
   - 107 total manga in database (35 manual + 72 MangaDex)
   - Data validation and storage
-
+- # Week 4: UDP Notification System
+  - UDP server on port 9091
+  - Client registration mechanism
+  - Broadcast notifications to all registered clients
+  - POST /notifications/send endpoint
+  - Connected to HTTP API
+  - Tested with PowerShell UDP client
