@@ -19,4 +19,4 @@
   - MangaDex API integration (fetched 100+ manga)
   - 107 total manga in database (35 manual + 72 MangaDex)
   - Data validation and storage
-| TCP | 9090 | Progress sync & broadcasting ✅ |
+
