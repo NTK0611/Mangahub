@@ -2,6 +2,7 @@ package user
 
 import (
 	"database/sql"
+	"mangahub/internal/tcp"
 	"mangahub/pkg/models"
 	"net/http"
 	"time"
@@ -85,7 +86,7 @@ func GetLibrary(db *sql.DB) gin.HandlerFunc {
 	}
 }
 
-func UpdateProgress(db *sql.DB) gin.HandlerFunc {
+func UpdateProgress(db *sql.DB, tcpServer *tcp.TCPServer) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := c.GetString("user_id")
 
@@ -110,6 +111,15 @@ func UpdateProgress(db *sql.DB) gin.HandlerFunc {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Manga not in library"})
 			return
 		}
+
+		// Broadcast update via TCP
+		tcpServer.BroadcastUpdate(tcp.ProgressUpdate{
+			UserID:    userID,
+			MangaID:   req.MangaID,
+			Chapter:   req.CurrentChapter,
+			Status:    req.Status,
+			Timestamp: time.Now().Unix(),
+		})
 
 		c.JSON(http.StatusOK, gin.H{"message": "Progress updated successfully"})
 	}
