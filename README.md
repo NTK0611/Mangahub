@@ -11,7 +11,7 @@
   - GET /users/library
   - PUT /users/progress
   - 35 manga seeded across 5 genres
-- # Week 3 + # Week 4: Data Collection, TCP Server & API Integration
+- # Week 3 + Week 4: Data Collection, TCP Server & API Integration
   - TCP server on port 9090
   - Multiple concurrent connections with goroutines
   - Progress broadcasting to all connected clients
