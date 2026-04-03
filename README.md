@@ -11,7 +11,7 @@
   - GET /users/library
   - PUT /users/progress
   - 35 manga seeded across 5 genres
-- # Week 3: Data Collection, TCP Server & API Integration
+- # Week 3 + # Week 4: Data Collection, TCP Server & API Integration
   - TCP server on port 9090
   - Multiple concurrent connections with goroutines
   - Progress broadcasting to all connected clients
@@ -19,7 +19,7 @@
   - MangaDex API integration (fetched 100+ manga)
   - 107 total manga in database (35 manual + 72 MangaDex)
   - Data validation and storage
-- # Week 4: UDP Notification System
+- # Week 5: UDP Notification System
   - UDP server on port 9091
   - Client registration mechanism
   - Broadcast notifications to all registered clients
