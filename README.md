@@ -1,0 +1,13 @@
+- [x] Week 1: Project setup, SQLite, Auth endpoints
+  - Go project structure
+  - SQLite database + 3 tables (users, manga, user_progress)
+  - POST /auth/register
+  - POST /auth/login + JWT token
+- [x] Week 2: Manga endpoints, JWT middleware, seed data
+  - JWT middleware for protected routes
+  - GET /manga (with search & filter)
+  - GET /manga/:id
+  - POST /users/library
+  - GET /users/library
+  - PUT /users/progress
+  - 35 manga seeded across 5 genres
