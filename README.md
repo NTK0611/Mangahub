@@ -1,9 +1,9 @@
-- [x] Week 1: Project setup, SQLite, Auth endpoints
+- # Week 1: Project setup, SQLite, Auth endpoints
   - Go project structure
   - SQLite database + 3 tables (users, manga, user_progress)
   - POST /auth/register
   - POST /auth/login + JWT token
-- [x] Week 2: Manga endpoints, JWT middleware, seed data
+- # Week 2: Manga endpoints, JWT middleware, seed data
   - JWT middleware for protected routes
   - GET /manga (with search & filter)
   - GET /manga/:id
@@ -11,3 +11,10 @@
   - GET /users/library
   - PUT /users/progress
   - 35 manga seeded across 5 genres
+- # Week 3: TCP Progress Sync Server
+  - TCP server on port 9090
+  - Multiple concurrent connections with goroutines
+  - JSON message protocol
+  - Progress broadcasting to all connected clients
+  - Connected to HTTP API (triggers on progress update)
+  | TCP | 9090 | Progress sync & broadcasting ✅ |
