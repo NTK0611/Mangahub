@@ -26,3 +26,10 @@
   - POST /notifications/send endpoint
   - Connected to HTTP API
   - Tested with PowerShell UDP client
+- # Week 6: WebSocket Implementation & Real-time Communication
+  - WebSocket server implementation (internal/websocket)
+  - Hub-based architecture for managing connections (Register/Unregister/Broadcast)
+  - Client management with concurrent Read/Write pumps
+  - WebSocket Middleware for JWT authentication/security
+  - Real-time event broadcasting for manga updates and system notifications
+  - Integration with existing API-server endpoints
