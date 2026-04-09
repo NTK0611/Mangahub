@@ -33,3 +33,15 @@
   - WebSocket Middleware for JWT authentication/security
   - Real-time event broadcasting for manga updates and system notifications
   - Integration with existing API-server endpoints
+- # Week 7: gRPC Internal Service
+  - Protocol Buffer definitions (proto/manga.proto)
+  - gRPC server on port 50051 (cmd/grpc-server)
+  - 3 unary RPC methods implemented:
+    - GetManga — fetch single manga by ID
+    - SearchManga — search with query/status/genre filters
+    - UpdateProgress — update user reading progress internally
+  - MangaClient wrapper for internal service-to-service calls (internal/grpc/client.go)
+  - Logging interceptor for all incoming RPC calls
+  - gRPC Server Reflection enabled (compatible with grpcurl)
+  - Graceful shutdown with OS signal handling
+  - Tested with grpcurl and PowerShell

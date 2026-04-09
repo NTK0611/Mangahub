@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package manga;
+
+option go_package = "mangahub/proto";
+
+// ─── Request / Response messages ────────────────────────────────────────────
+
+message GetMangaRequest {
+  string id = 1;
+}
+
+message SearchRequest {
+  string query  = 1; // search by title or author
+  string status = 2; // "ongoing" | "completed" | ""
+  string genre  = 3; // filter by genre (optional)
+}
+
+message MangaItem {
+  string          id             = 1;
+  string          title          = 2;
+  string          author         = 3;
+  repeated string genres         = 4;
+  string          status         = 5;
+  int32           total_chapters = 6;
+  string          description    = 7;
+  string          cover_url      = 8;
+}
+
+message MangaResponse {
+  MangaItem manga   = 1;
+  bool      found   = 2;
+  string    message = 3;
+}
+
+message SearchResponse {
+  repeated MangaItem manga = 1;
+  int32              count = 2;
+}
+
+message ProgressRequest {
+  string user_id         = 1;
+  string manga_id        = 2;
+  int32  current_chapter = 3;
+  string status          = 4; // "reading" | "completed" | "plan_to_read"
+}
+
+message ProgressResponse {
+  bool   success = 1;
+  string message = 2;
+}
+
+// ─── Service definition ──────────────────────────────────────────────────────
+
+service MangaService {
+  // Get a single manga by ID
+  rpc GetManga(GetMangaRequest) returns (MangaResponse);
+
+  // Search manga with optional filters
+  rpc SearchManga(SearchRequest) returns (SearchResponse);
+
+  // Update a user's reading progress (internal use by other services)
+  rpc UpdateProgress(ProgressRequest) returns (ProgressResponse);
+}
