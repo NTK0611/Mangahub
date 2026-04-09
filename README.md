@@ -45,3 +45,10 @@
   - gRPC Server Reflection enabled (compatible with grpcurl)
   - Graceful shutdown with OS signal handling
   - Tested with grpcurl and PowerShell
+- # Week 8: System Integration & End-to-End Testing
+  - Integrated all 5 protocols (HTTP, TCP, UDP, WebSocket, gRPC)
+  - End-to-End (E2E) testing across the entire system workflow
+  - HTTP API successfully routes through gRPC for database operations
+  - TCP sync & UDP broadcasting triggered seamlessly via HTTP updates
+  - Created custom Go scripts (test_tcp.go, test_udp.go) for local testing
+  - Resolved JSON binding and cross-protocol communication bugs
