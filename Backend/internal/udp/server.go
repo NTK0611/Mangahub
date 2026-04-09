@@ -38,9 +38,12 @@ func (s *UDPServer) Start() {
 	if err != nil {
 		log.Fatal("Failed to start UDP server:", err)
 	}
-	s.conn = conn
-	defer conn.Close()
 
+	s.mutex.Lock()
+	s.conn = conn
+	s.mutex.Unlock()
+
+	defer conn.Close()
 	log.Println("✅ UDP server running on port", s.Port)
 
 	buffer := make([]byte, 1024)
@@ -64,7 +67,6 @@ func (s *UDPServer) registerClient(addr net.UDPAddr) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	// Check if already registered
 	for _, client := range s.Clients {
 		if client.String() == addr.String() {
 			log.Println("Client already registered:", addr.String())
@@ -75,7 +77,6 @@ func (s *UDPServer) registerClient(addr net.UDPAddr) {
 	s.Clients = append(s.Clients, addr)
 	log.Println("✅ New UDP client registered:", addr.String())
 
-	// Send confirmation
 	if s.conn != nil {
 		s.conn.WriteToUDP([]byte("REGISTERED"), &addr)
 	}
@@ -100,4 +101,18 @@ func (s *UDPServer) BroadcastNotification(notification Notification) {
 			log.Printf("📢 Notification sent to %s", client.String())
 		}
 	}
+}
+
+// GetClientCount returns the number of registered UDP clients (thread-safe).
+func (s *UDPServer) GetClientCount() int {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return len(s.Clients)
+}
+
+// IsRunning returns true if the UDP server socket is open.
+func (s *UDPServer) IsRunning() bool {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return s.conn != nil
 }

@@ -38,7 +38,6 @@ func (s *TCPServer) Start() {
 	defer listener.Close()
 	log.Println("✅ TCP server running on port", s.Port)
 
-	// Start broadcaster
 	go s.handleBroadcast()
 
 	for {
@@ -67,7 +66,6 @@ func (s *TCPServer) handleConnection(conn net.Conn) {
 		log.Println("TCP connection closed:", addr)
 	}()
 
-	// Read messages from client
 	decoder := json.NewDecoder(conn)
 	for {
 		var update ProgressUpdate
@@ -96,4 +94,11 @@ func (s *TCPServer) handleBroadcast() {
 
 func (s *TCPServer) BroadcastUpdate(update ProgressUpdate) {
 	s.Broadcast <- update
+}
+
+// GetConnectionCount returns the number of active TCP connections (thread-safe).
+func (s *TCPServer) GetConnectionCount() int {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return len(s.Connections)
 }

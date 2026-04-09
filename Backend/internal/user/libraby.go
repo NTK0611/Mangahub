@@ -2,10 +2,13 @@ package user
 
 import (
 	"database/sql"
-	"mangahub/internal/tcp"
-	"mangahub/pkg/models"
+	"fmt"
 	"net/http"
 	"time"
+
+	"mangahub/internal/tcp"
+	"mangahub/internal/udp"
+	"mangahub/pkg/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,7 +23,7 @@ func AddToLibrary(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		// Check if manga exists
+		// Check manga exists
 		var mangaID string
 		err := db.QueryRow("SELECT id FROM manga WHERE id = ?", req.MangaID).Scan(&mangaID)
 		if err == sql.ErrNoRows {
@@ -28,14 +31,13 @@ func AddToLibrary(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		// Add to library
 		_, err = db.Exec(
 			`INSERT INTO user_progress (user_id, manga_id, current_chapter, status, updated_at)
              VALUES (?, ?, ?, ?, ?)
              ON CONFLICT(user_id, manga_id) DO UPDATE SET
              current_chapter = excluded.current_chapter,
-             status = excluded.status,
-             updated_at = excluded.updated_at`,
+             status          = excluded.status,
+             updated_at      = excluded.updated_at`,
 			userID, req.MangaID, req.CurrentChapter, req.Status, time.Now().UTC(),
 		)
 		if err != nil {
@@ -67,11 +69,10 @@ func GetLibrary(db *sql.DB) gin.HandlerFunc {
 		var library []models.UserProgress
 		for rows.Next() {
 			var p models.UserProgress
-			err := rows.Scan(
+			if err := rows.Scan(
 				&p.MangaID, &p.CurrentChapter, &p.Status, &p.LastUpdated,
 				&p.Title, &p.Author, &p.TotalChapters,
-			)
-			if err != nil {
+			); err != nil {
 				continue
 			}
 			p.UserID = userID
@@ -86,9 +87,19 @@ func GetLibrary(db *sql.DB) gin.HandlerFunc {
 	}
 }
 
-func UpdateProgress(db *sql.DB, tcpServer *tcp.TCPServer) gin.HandlerFunc {
+// UpdateProgress updates reading progress and fans out to TCP + UDP so all
+// connected clients are notified in real-time.
+//
+// Protocol chain:
+//
+//	HTTP PUT /users/progress
+//	  → SQLite UPDATE
+//	  → TCP broadcast (progress sync to monitoring clients)
+//	  → UDP broadcast (push notification to registered mobile/desktop clients)
+func UpdateProgress(db *sql.DB, tcpServer *tcp.TCPServer, udpServer *udp.UDPServer) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := c.GetString("user_id")
+		username := c.GetString("username")
 
 		var req models.UpdateProgressRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -108,19 +119,35 @@ func UpdateProgress(db *sql.DB, tcpServer *tcp.TCPServer) gin.HandlerFunc {
 
 		rows, _ := result.RowsAffected()
 		if rows == 0 {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Manga not in library"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "Manga not in library — add it first via POST /users/library"})
 			return
 		}
 
-		// Broadcast update via TCP
+		now := time.Now()
+
+		// ── TCP broadcast: sync progress to all connected monitoring clients ──
 		tcpServer.BroadcastUpdate(tcp.ProgressUpdate{
 			UserID:    userID,
 			MangaID:   req.MangaID,
 			Chapter:   req.CurrentChapter,
 			Status:    req.Status,
-			Timestamp: time.Now().Unix(),
+			Timestamp: now.Unix(),
 		})
 
-		c.JSON(http.StatusOK, gin.H{"message": "Progress updated successfully"})
+		// ── UDP broadcast: push notification to registered clients ────────────
+		udpServer.BroadcastNotification(udp.Notification{
+			Type:    "progress_update",
+			MangaID: req.MangaID,
+			Message: fmt.Sprintf("%s is now on chapter %d of %s",
+				username, req.CurrentChapter, req.MangaID),
+			Timestamp: now.Unix(),
+		})
+
+		c.JSON(http.StatusOK, gin.H{
+			"message":         "Progress updated successfully",
+			"manga_id":        req.MangaID,
+			"current_chapter": req.CurrentChapter,
+			"status":          req.Status,
+		})
 	}
 }
