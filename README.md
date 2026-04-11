@@ -1,9 +1,10 @@
-- # Week 1: Project setup, SQLite, Auth endpoints
+# Week 1: Project setup, SQLite, Auth endpoints
   - Go project structure
   - SQLite database + 3 tables (users, manga, user_progress)
   - POST /auth/register
   - POST /auth/login + JWT token
-- # Week 2: Manga endpoints, JWT middleware, seed data
+
+# Week 2: Manga endpoints, JWT middleware, seed data
   - JWT middleware for protected routes
   - GET /manga (with search & filter)
   - GET /manga/:id
@@ -11,7 +12,8 @@
   - GET /users/library
   - PUT /users/progress
   - 35 manga seeded across 5 genres
-- # Week 3 + Week 4: Data Collection, TCP Server & API Integration
+
+# Week 3 + Week 4: Data Collection, TCP Server & API Integration
   - TCP server on port 9090
   - Multiple concurrent connections with goroutines
   - Progress broadcasting to all connected clients
@@ -19,21 +21,24 @@
   - MangaDex API integration (fetched 100+ manga)
   - 107 total manga in database (35 manual + 72 MangaDex)
   - Data validation and storage
-- # Week 5: UDP Notification System
+
+# Week 5: UDP Notification System
   - UDP server on port 9091
   - Client registration mechanism
   - Broadcast notifications to all registered clients
   - POST /notifications/send endpoint
   - Connected to HTTP API
   - Tested with PowerShell UDP client
-- # Week 6: WebSocket Implementation & Real-time Communication
+
+# Week 6: WebSocket Implementation & Real-time Communication
   - WebSocket server implementation (internal/websocket)
   - Hub-based architecture for managing connections (Register/Unregister/Broadcast)
   - Client management with concurrent Read/Write pumps
   - WebSocket Middleware for JWT authentication/security
   - Real-time event broadcasting for manga updates and system notifications
   - Integration with existing API-server endpoints
-- # Week 7: gRPC Internal Service
+
+# Week 7: gRPC Internal Service
   - Protocol Buffer definitions (proto/manga.proto)
   - gRPC server on port 50051 (cmd/grpc-server)
   - 3 unary RPC methods implemented:
@@ -45,10 +50,25 @@
   - gRPC Server Reflection enabled (compatible with grpcurl)
   - Graceful shutdown with OS signal handling
   - Tested with grpcurl and PowerShell
-- # Week 8: System Integration & End-to-End Testing
+
+# Week 8: System Integration & End-to-End Testing
   - Integrated all 5 protocols (HTTP, TCP, UDP, WebSocket, gRPC)
   - End-to-End (E2E) testing across the entire system workflow
   - HTTP API successfully routes through gRPC for database operations
   - TCP sync & UDP broadcasting triggered seamlessly via HTTP updates
   - Created custom Go scripts (test_tcp.go, test_udp.go) for local testing
   - Resolved JSON binding and cross-protocol communication bugs
+
+# Week 9: Frontend & API Documentation
+  - Single-page application (Frontend/index.html) — no framework, vanilla JS
+  - Auth page with Login/Register forms, JWT storage, demo mode fallback
+  - Browse page — manga grid with live search, genre chip filters, status filter
+  - Manga detail modal — metadata, add to library (Reading/Plan/Completed), chapter progress updater
+  - My Library page — three tabs with reading progress bars and chapter tracking
+  - Chat page — WebSocket chat UI with connect/disconnect, live message feed, send on Enter
+  - System Status page — health indicators for all 5 protocols with endpoint reference cards
+  - API documentation page (Frontend/api-docs.html)
+    - Sticky sidebar with scrollspy for all 5 protocol sections
+    - Collapsible endpoint cards with request/response schemas and parameter tables
+    - Syntax-highlighted code blocks with copy buttons
+    - gRPC proto definitions and grpcurl test commands
