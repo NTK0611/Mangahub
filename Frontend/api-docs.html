@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MangaHub — API Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet" />
+
+<style>
+:root {
+  --ink:     #0d0d0f;
+  --ink-2:   #141418;
+  --ink-3:   #1e1e24;
+  --ink-4:   #2a2a33;
+  --faint:   #2e2d38;
+  --panel:   #18181f;
+  --red:     #e8232a;
+  --red-glow:rgba(232,35,42,0.12);
+  --gold:    #f5c842;
+  --blue:    #64b5f6;
+  --green:   #4caf50;
+  --purple:  #ba68c8;
+  --white:   #f0ede8;
+  --muted:   #7a7882;
+  --font-head: 'Bebas Neue', sans-serif;
+  --font-body: 'Playfair Display', serif;
+  --font-ui:   'Noto Sans JP', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--ink);
+  color: var(--white);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.6;
+  display: flex;
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+::selection { background: var(--red); color: #fff; }
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--ink-2); }
+::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 3px; }
+
+/* SIDEBAR */
+.sidebar {
+  width: 280px;
+  min-width: 280px;
+  background: var(--ink-2);
+  border-right: 1px solid var(--faint);
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  overflow-y: auto;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-logo {
+  padding: 2rem 1.5rem 1.5rem;
+  border-bottom: 1px solid var(--faint);
+}
+.sidebar-logo h1 {
+  font-family: var(--font-head);
+  font-size: 2.4rem;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: var(--red);
+}
+.sidebar-logo h1 span { color: var(--white); }
+.sidebar-logo p {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sidebar-version {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  background: rgba(232,35,42,0.1);
+  border: 1px solid rgba(232,35,42,0.3);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--red);
+  margin-top: 8px;
+}
+
+.sidebar-section {
+  padding: 1.5rem 1.5rem 0.5rem;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 1.5rem;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  text-decoration: none;
+  border-left: 2px solid transparent;
+}
+.sidebar-link:hover { color: var(--white); background: var(--ink-3); }
+.sidebar-link.active { color: var(--white); border-left-color: var(--red); background: rgba(232,35,42,0.05); }
+
+.sidebar-link .method-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-get { background: var(--green); }
+.dot-post { background: var(--blue); }
+.dot-put { background: var(--gold); }
+.dot-delete { background: var(--red); }
+.dot-msg { background: var(--purple); }
+.dot-rpc { background: var(--purple); }
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 1.5rem;
+  border-top: 1px solid var(--faint);
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.sidebar-footer a { color: var(--red); }
+
+/* MAIN CONTENT */
+.main {
+  margin-left: 280px;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+/* HERO */
+.docs-hero {
+  padding: 4rem 4rem 3rem;
+  border-bottom: 1px solid var(--faint);
+  background: linear-gradient(135deg, var(--ink) 0%, #110008 100%);
+  position: relative;
+  overflow: hidden;
+}
+.docs-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 100% at 90% 50%, rgba(232,35,42,0.08) 0%, transparent 70%);
+}
+.docs-hero h1 {
+  font-family: var(--font-head);
+  font-size: 4rem;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  position: relative;
+}
+.docs-hero h1 span { color: var(--red); }
+.docs-hero p {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 1.1rem;
+  color: var(--muted);
+  margin-top: 1rem;
+  max-width: 600px;
+  position: relative;
+}
+.hero-tags { display: flex; gap: 0.75rem; margin-top: 2rem; flex-wrap: wrap; position: relative; }
+.hero-tag {
+  padding: 6px 14px;
+  border: 1px solid var(--faint);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hero-tag strong { color: var(--white); }
+.hero-tag .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+/* BASE URL BANNER */
+.base-url-banner {
+  background: var(--ink-3);
+  border-bottom: 1px solid var(--faint);
+  padding: 1rem 4rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.base-url-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.base-url-value {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  background: var(--ink-4);
+  border: 1px solid var(--faint);
+  border-radius: 4px;
+  padding: 4px 12px;
+  color: var(--green);
+}
+
+/* DOCS SECTIONS */
+.docs-section {
+  padding: 3rem 4rem;
+  border-bottom: 1px solid var(--faint);
+  scroll-margin-top: 20px;
+}
+
+.section-protocol-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.section-protocol-icon {
+  width: 48px; height: 48px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-head);
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.icon-http { background: rgba(100,181,246,0.12); color: var(--blue); border: 1px solid rgba(100,181,246,0.25); }
+.icon-tcp  { background: rgba(232,35,42,0.12);  color: var(--red);  border: 1px solid rgba(232,35,42,0.25);  }
+.icon-udp  { background: rgba(245,200,66,0.12); color: var(--gold); border: 1px solid rgba(245,200,66,0.25); }
+.icon-ws   { background: rgba(76,175,80,0.12);  color: var(--green);border: 1px solid rgba(76,175,80,0.25);  }
+.icon-grpc { background: rgba(186,104,200,0.12);color: var(--purple);border:1px solid rgba(186,104,200,0.25); }
+
+.section-title {
+  font-family: var(--font-head);
+  font-size: 2rem;
+  letter-spacing: 0.06em;
+}
+.section-port {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.section-desc {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.8;
+  margin-bottom: 2rem;
+  font-style: italic;
+}
+
+/* ENDPOINT CARD */
+.endpoint-card {
+  background: var(--panel);
+  border: 1px solid var(--faint);
+  border-radius: 6px;
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+}
+.endpoint-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+.endpoint-head:hover { background: var(--ink-3); }
+.endpoint-head.open { background: var(--ink-3); }
+
+.method-badge {
+  padding: 3px 10px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+  min-width: 62px;
+  text-align: center;
+}
+.badge-GET    { background: rgba(76,175,80,0.18);    color: var(--green);  border: 1px solid rgba(76,175,80,0.35); }
+.badge-POST   { background: rgba(100,181,246,0.18);  color: var(--blue);   border: 1px solid rgba(100,181,246,0.35); }
+.badge-PUT    { background: rgba(245,200,66,0.18);   color: var(--gold);   border: 1px solid rgba(245,200,66,0.35); }
+.badge-DELETE { background: rgba(232,35,42,0.18);    color: var(--red);    border: 1px solid rgba(232,35,42,0.35); }
+.badge-MSG    { background: rgba(186,104,200,0.18);  color: var(--purple); border: 1px solid rgba(186,104,200,0.35); }
+.badge-RPC    { background: rgba(186,104,200,0.18);  color: var(--purple); border: 1px solid rgba(186,104,200,0.35); }
+.badge-EVT    { background: rgba(76,175,80,0.18);    color: var(--green);  border: 1px solid rgba(76,175,80,0.35); }
+.badge-SUB    { background: rgba(245,200,66,0.18);   color: var(--gold);   border: 1px solid rgba(245,200,66,0.35); }
+
+.endpoint-path {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--white);
+  flex: 1;
+}
+.endpoint-summary { font-size: 13px; color: var(--muted); margin-left: auto; }
+.endpoint-arrow {
+  color: var(--muted);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.endpoint-head.open .endpoint-arrow { transform: rotate(90deg); }
+
+.endpoint-body {
+  display: none;
+  padding: 1.25rem;
+  border-top: 1px solid var(--faint);
+  background: var(--ink-2);
+}
+.endpoint-body.open { display: block; }
+
+.endpoint-section { margin-bottom: 1.25rem; }
+.endpoint-section:last-child { margin-bottom: 0; }
+.endpoint-section-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.auth-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 2px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+.auth-required { background: rgba(232,35,42,0.1); border: 1px solid rgba(232,35,42,0.25); color: var(--red); }
+.auth-none { background: rgba(76,175,80,0.1); border: 1px solid rgba(76,175,80,0.25); color: var(--green); }
+
+/* CODE BLOCK */
+.code-block {
+  background: #0a0a0c;
+  border: 1px solid var(--faint);
+  border-radius: 4px;
+  padding: 1rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-x: auto;
+  position: relative;
+}
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.code-lang {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.copy-btn {
+  padding: 2px 10px;
+  background: transparent;
+  border: 1px solid var(--faint);
+  border-radius: 2px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.copy-btn:hover { border-color: var(--white); color: var(--white); }
+.copy-btn.copied { border-color: var(--green); color: var(--green); }
+
+/* Syntax colors */
+.k { color: #c792ea; }  /* keyword */
+.s { color: #c3e88d; }  /* string */
+.n { color: #82aaff; }  /* number */
+.c { color: #546e7a; }  /* comment */
+.p { color: var(--white); }  /* punctuation */
+.f { color: #ffcb6b; }  /* field */
+
+/* PARAMS TABLE */
+.params-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.params-table th {
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--faint);
+  font-weight: 700;
+}
+.params-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(46,45,56,0.5);
+  vertical-align: top;
+}
+.params-table tr:last-child td { border-bottom: none; }
+.param-name { font-family: var(--font-mono); color: var(--blue); font-size: 12px; }
+.param-type { font-family: var(--font-mono); color: var(--purple); font-size: 11px; }
+.param-req { color: var(--red); font-size: 10px; font-weight: 700; }
+.param-opt { color: var(--muted); font-size: 10px; }
+.param-desc { color: var(--muted); font-size: 12px; }
+
+/* RESPONSE */
+.response-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.status-200 { background: rgba(76,175,80,0.1); border: 1px solid rgba(76,175,80,0.25); color: var(--green); }
+.status-201 { background: rgba(100,181,246,0.1); border: 1px solid rgba(100,181,246,0.25); color: var(--blue); }
+.status-400 { background: rgba(245,200,66,0.1); border: 1px solid rgba(245,200,66,0.25); color: var(--gold); }
+.status-401 { background: rgba(232,35,42,0.1); border: 1px solid rgba(232,35,42,0.25); color: var(--red); }
+
+/* OVERVIEW TABLE */
+.overview-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 1.5rem; }
+.overview-table th {
+  text-align: left;
+  padding: 8px 14px;
+  background: var(--ink-3);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+  border: 1px solid var(--faint);
+}
+.overview-table td {
+  padding: 10px 14px;
+  border: 1px solid var(--faint);
+  vertical-align: top;
+}
+.overview-table tr:hover td { background: var(--ink-3); }
+
+/* SCROLLSPY HIGHLIGHT */
+.docs-section { opacity: 1; transition: opacity 0.2s; }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .main { margin-left: 0; }
+  .docs-hero, .docs-section, .base-url-banner { padding-left: 1.5rem; padding-right: 1.5rem; }
+}
+
+/* PAGE TRANSITIONS */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.docs-section { animation: fadeIn 0.4s ease both; }
+.docs-section:nth-child(2) { animation-delay: 0.05s; }
+.docs-section:nth-child(3) { animation-delay: 0.10s; }
+.docs-section:nth-child(4) { animation-delay: 0.15s; }
+.docs-section:nth-child(5) { animation-delay: 0.20s; }
+.docs-section:nth-child(6) { animation-delay: 0.25s; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h1>MANGA<span>HUB</span></h1>
+    <p>API Documentation</p>
+    <div class="sidebar-version">v1.0.0 · IT096IU</div>
+  </div>
+
+  <div class="sidebar-section">Overview</div>
+  <a href="#overview" class="sidebar-link active">Introduction</a>
+  <a href="#auth-overview" class="sidebar-link">Authentication</a>
+  <a href="#errors" class="sidebar-link">Error Handling</a>
+
+  <div class="sidebar-section">HTTP REST · :8080</div>
+  <a href="#auth" class="sidebar-link"><span class="method-dot dot-post"></span>POST /auth/register</a>
+  <a href="#auth" class="sidebar-link"><span class="method-dot dot-post"></span>POST /auth/login</a>
+  <a href="#manga" class="sidebar-link"><span class="method-dot dot-get"></span>GET /manga</a>
+  <a href="#manga" class="sidebar-link"><span class="method-dot dot-get"></span>GET /manga/:id</a>
+  <a href="#library" class="sidebar-link"><span class="method-dot dot-post"></span>POST /users/library</a>
+  <a href="#library" class="sidebar-link"><span class="method-dot dot-get"></span>GET /users/library</a>
+  <a href="#library" class="sidebar-link"><span class="method-dot dot-put"></span>PUT /users/progress</a>
+
+  <div class="sidebar-section">TCP · :9090</div>
+  <a href="#tcp" class="sidebar-link"><span class="method-dot dot-msg"></span>ProgressUpdate</a>
+  <a href="#tcp" class="sidebar-link"><span class="method-dot dot-msg"></span>ClientConnect</a>
+
+  <div class="sidebar-section">UDP · :9091</div>
+  <a href="#udp" class="sidebar-link"><span class="method-dot dot-msg"></span>Register</a>
+  <a href="#udp" class="sidebar-link"><span class="method-dot dot-msg"></span>ChapterRelease</a>
+
+  <div class="sidebar-section">WebSocket · /ws/chat</div>
+  <a href="#websocket" class="sidebar-link"><span class="method-dot dot-get"></span>connect</a>
+  <a href="#websocket" class="sidebar-link"><span class="method-dot dot-msg"></span>message</a>
+
+  <div class="sidebar-section">gRPC · :50051</div>
+  <a href="#grpc" class="sidebar-link"><span class="method-dot dot-rpc"></span>GetManga</a>
+  <a href="#grpc" class="sidebar-link"><span class="method-dot dot-rpc"></span>SearchManga</a>
+  <a href="#grpc" class="sidebar-link"><span class="method-dot dot-rpc"></span>UpdateProgress</a>
+
+  <div class="sidebar-footer">
+    MangaHub · Net-centric Programming<br>
+    IT096IU — Go Implementation<br>
+    <a href="index.html">← Back to App</a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- HERO -->
+  <div class="docs-hero">
+    <h1>API <span>REFERENCE</span></h1>
+    <p>Complete documentation for all five network protocols powering MangaHub — HTTP, TCP, UDP, WebSocket, and gRPC.</p>
+    <div class="hero-tags">
+      <div class="hero-tag"><span class="dot" style="background:var(--blue)"></span> HTTP REST <strong>:8080</strong></div>
+      <div class="hero-tag"><span class="dot" style="background:var(--red)"></span> TCP Sync <strong>:9090</strong></div>
+      <div class="hero-tag"><span class="dot" style="background:var(--gold)"></span> UDP Notify <strong>:9091</strong></div>
+      <div class="hero-tag"><span class="dot" style="background:var(--green)"></span> WebSocket <strong>/ws/chat</strong></div>
+      <div class="hero-tag"><span class="dot" style="background:var(--purple)"></span> gRPC <strong>:50051</strong></div>
+    </div>
+  </div>
+
+  <!-- BASE URL -->
+  <div class="base-url-banner">
+    <span class="base-url-label">Base URL</span>
+    <code class="base-url-value">http://localhost:8080</code>
+    <span class="base-url-label" style="margin-left:1rem">Content-Type</span>
+    <code class="base-url-value">application/json</code>
+  </div>
+
+  <!-- OVERVIEW -->
+  <section class="docs-section" id="overview">
+    <h2 style="font-family:var(--font-head);font-size:2rem;letter-spacing:0.06em;margin-bottom:1rem">OVERVIEW</h2>
+    <p class="section-desc">MangaHub uses five distinct communication protocols, each serving a specialized purpose in the system architecture.</p>
+
+    <table class="overview-table">
+      <thead>
+        <tr>
+          <th>Protocol</th><th>Port</th><th>Purpose</th><th>Library</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="method-badge badge-GET" style="min-width:auto;padding:2px 8px">HTTP</span></td>
+          <td><code style="font-family:var(--font-mono);color:var(--blue)">:8080</code></td>
+          <td style="color:var(--muted)">RESTful API — user auth, manga CRUD, library management</td>
+          <td><code style="font-family:var(--font-mono);font-size:11px;color:var(--muted)">gin-gonic/gin</code></td>
+        </tr>
+        <tr>
+          <td><span class="method-badge badge-MSG" style="min-width:auto;padding:2px 8px">TCP</span></td>
+          <td><code style="font-family:var(--font-mono);color:var(--red)">:9090</code></td>
+          <td style="color:var(--muted)">Persistent connections for real-time progress broadcasting</td>
+          <td><code style="font-family:var(--font-mono);font-size:11px;color:var(--muted)">net (stdlib)</code></td>
+        </tr>
+        <tr>
+          <td><span class="method-badge badge-SUB" style="min-width:auto;padding:2px 8px">UDP</span></td>
+          <td><code style="font-family:var(--font-mono);color:var(--gold)">:9091</code></td>
+          <td style="color:var(--muted)">Stateless broadcast for chapter release notifications</td>
+          <td><code style="font-family:var(--font-mono);font-size:11px;color:var(--muted)">net (stdlib)</code></td>
+        </tr>
+        <tr>
+          <td><span class="method-badge badge-EVT" style="min-width:auto;padding:2px 8px">WS</span></td>
+          <td><code style="font-family:var(--font-mono);color:var(--green)">:8080/ws</code></td>
+          <td style="color:var(--muted)">Bidirectional real-time chat for manga discussions</td>
+          <td><code style="font-family:var(--font-mono);font-size:11px;color:var(--muted)">gorilla/websocket</code></td>
+        </tr>
+        <tr>
+          <td><span class="method-badge badge-RPC" style="min-width:auto;padding:2px 8px">gRPC</span></td>
+          <td><code style="font-family:var(--font-mono);color:var(--purple)">:50051</code></td>
+          <td style="color:var(--muted)">Internal service communication via Protocol Buffers</td>
+          <td><code style="font-family:var(--font-mono);font-size:11px;color:var(--muted)">google.golang.org/grpc</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- AUTH OVERVIEW -->
+  <section class="docs-section" id="auth-overview">
+    <h2 style="font-family:var(--font-head);font-size:2rem;letter-spacing:0.06em;margin-bottom:1rem">AUTHENTICATION</h2>
+    <p class="section-desc">MangaHub uses JWT (JSON Web Tokens) for authentication. Include the token in the Authorization header for all protected endpoints.</p>
+
+    <div class="endpoint-section">
+      <div class="endpoint-section-title">Header Format</div>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-lang">HTTP Header</span>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <span class="f">Authorization</span><span class="p">: </span><span class="s">Bearer &lt;your_jwt_token&gt;</span>
+      </div>
+    </div>
+
+    <div class="endpoint-section" style="margin-top:1.5rem">
+      <div class="endpoint-section-title">JWT Payload</div>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-lang">JSON</span>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+{<br>
+&nbsp;&nbsp;<span class="f">"user_id"</span><span class="p">: </span><span class="s">"user123"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"username"</span><span class="p">: </span><span class="s">"manga_lover"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"exp"</span><span class="p">: </span><span class="n">1735689600</span><br>
+}
+      </div>
+    </div>
+  </section>
+
+  <!-- ERROR HANDLING -->
+  <section class="docs-section" id="errors">
+    <h2 style="font-family:var(--font-head);font-size:2rem;letter-spacing:0.06em;margin-bottom:1rem">ERROR HANDLING</h2>
+    <p class="section-desc">All errors return a consistent JSON body with an error message and appropriate HTTP status code.</p>
+    <div class="code-block">
+      <div class="code-block-header">
+        <span class="code-lang">Error Response</span>
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      </div>
+{<br>
+&nbsp;&nbsp;<span class="f">"error"</span><span class="p">: </span><span class="s">"Manga not found"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"code"</span><span class="p">: </span><span class="n">404</span><br>
+}
+    </div>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1rem">
+      <span class="response-status status-200">200 OK</span>
+      <span class="response-status status-201">201 Created</span>
+      <span class="response-status status-400">400 Bad Request</span>
+      <span class="response-status status-401">401 Unauthorized</span>
+      <span class="response-status" style="background:rgba(245,200,66,0.1);border:1px solid rgba(245,200,66,0.25);color:var(--gold)">404 Not Found</span>
+      <span class="response-status" style="background:rgba(232,35,42,0.1);border:1px solid rgba(232,35,42,0.25);color:var(--red)">500 Server Error</span>
+    </div>
+  </section>
+
+  <!-- HTTP AUTH ENDPOINTS -->
+  <section class="docs-section" id="auth">
+    <div class="section-protocol-header">
+      <div class="section-protocol-icon icon-http">HTTP</div>
+      <div>
+        <div class="section-title">AUTHENTICATION</div>
+        <div class="section-port">POST /auth/register · POST /auth/login</div>
+      </div>
+    </div>
+    <p class="section-desc">User registration and JWT-based authentication endpoints. No authorization required.</p>
+
+    <!-- Register -->
+    <div class="endpoint-card">
+      <div class="endpoint-head" onclick="toggleEndpoint(this)">
+        <span class="method-badge badge-POST">POST</span>
+        <span class="endpoint-path">/auth/register</span>
+        <span class="endpoint-summary">Create new user account</span>
+        <span class="endpoint-arrow">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Authorization</div>
+          <span class="auth-badge auth-none">🔓 No auth required</span>
+        </div>
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Request Body</div>
+          <table class="params-table">
+            <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td class="param-name">username</td><td class="param-type">string</td><td class="param-req">required</td><td class="param-desc">Unique username (3–30 chars)</td></tr>
+              <tr><td class="param-name">email</td><td class="param-type">string</td><td class="param-req">required</td><td class="param-desc">Valid email address</td></tr>
+              <tr><td class="param-name">password</td><td class="param-type">string</td><td class="param-req">required</td><td class="param-desc">Password (min 8 characters)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Request Example</div>
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+{<br>
+&nbsp;&nbsp;<span class="f">"username"</span><span class="p">: </span><span class="s">"manga_fan"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"email"</span><span class="p">: </span><span class="s">"fan@example.com"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"password"</span><span class="p">: </span><span class="s">"securepass123"</span><br>
+}
+          </div>
+        </div>
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Response — 201 Created</div>
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+{<br>
+&nbsp;&nbsp;<span class="f">"message"</span><span class="p">: </span><span class="s">"User created successfully"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"user_id"</span><span class="p">: </span><span class="s">"abc123"</span><br>
+}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Login -->
+    <div class="endpoint-card">
+      <div class="endpoint-head" onclick="toggleEndpoint(this)">
+        <span class="method-badge badge-POST">POST</span>
+        <span class="endpoint-path">/auth/login</span>
+        <span class="endpoint-summary">Authenticate and receive JWT token</span>
+        <span class="endpoint-arrow">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Authorization</div>
+          <span class="auth-badge auth-none">🔓 No auth required</span>
+        </div>
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Request Body</div>
+          <table class="params-table">
+            <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td class="param-name">username</td><td class="param-type">string</td><td class="param-req">required</td><td class="param-desc">Registered username</td></tr>
+              <tr><td class="param-name">password</td><td class="param-type">string</td><td class="param-req">required</td><td class="param-desc">Account password</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Response — 200 OK</div>
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+{<br>
+&nbsp;&nbsp;<span class="f">"token"</span><span class="p">: </span><span class="s">"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"user_id"</span><span class="p">: </span><span class="s">"abc123"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"username"</span><span class="p">: </span><span class="s">"manga_fan"</span><br>
+}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MANGA ENDPOINTS -->
+  <section class="docs-section" id="manga">
+    <div class="section-protocol-header">
+      <div class="section-protocol-icon icon-http">HTTP</div>
+      <div>
+        <div class="section-title">MANGA</div>
+        <div class="section-port">GET /manga · GET /manga/:id</div>
+      </div>
+    </div>
+    <p class="section-desc">Browse and search the manga database with optional filters for genre, status, and full-text search.</p>
+
+    <div class="endpoint-card">
+      <div class="endpoint-head" onclick="toggleEndpoint(this)">
+        <span class="method-badge badge-GET">GET</span>
+        <span class="endpoint-path">/manga</span>
+        <span class="endpoint-summary">Search manga with filters</span>
+        <span class="endpoint-arrow">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Authorization</div>
+          <span class="auth-badge auth-required">🔒 JWT Required</span>
+        </div>
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Query Parameters</div>
+          <table class="params-table">
+            <thead><tr><th>Param</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td class="param-name">q</td><td class="param-type">string</td><td class="param-opt">optional</td><td class="param-desc">Search by title or author</td></tr>
+              <tr><td class="param-name">genre</td><td class="param-type">string</td><td class="param-opt">optional</td><td class="param-desc">Filter by genre (Shounen, Seinen...)</td></tr>
+              <tr><td class="param-name">status</td><td class="param-type">string</td><td class="param-opt">optional</td><td class="param-desc">ongoing or completed</td></tr>
+              <tr><td class="param-name">limit</td><td class="param-type">int</td><td class="param-opt">optional</td><td class="param-desc">Max results (default: 50)</td></tr>
+              <tr><td class="param-name">offset</td><td class="param-type">int</td><td class="param-opt">optional</td><td class="param-desc">Pagination offset (default: 0)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Response — 200 OK</div>
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+[<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">"id"</span><span class="p">: </span><span class="s">"one-piece"</span><span class="p">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">"title"</span><span class="p">: </span><span class="s">"One Piece"</span><span class="p">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">"author"</span><span class="p">: </span><span class="s">"Oda Eiichiro"</span><span class="p">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">"genres"</span><span class="p">: [</span><span class="s">"Action"</span><span class="p">, </span><span class="s">"Shounen"</span><span class="p">],</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">"status"</span><span class="p">: </span><span class="s">"ongoing"</span><span class="p">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">"total_chapters"</span><span class="p">: </span><span class="n">1110</span><span class="p">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">"description"</span><span class="p">: </span><span class="s">"A young pirate's adventure..."</span><span class="p">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">"cover_url"</span><span class="p">: </span><span class="s">"https://example.com/covers/one-piece.jpg"</span><br>
+&nbsp;&nbsp;}<br>
+]
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="endpoint-head" onclick="toggleEndpoint(this)">
+        <span class="method-badge badge-GET">GET</span>
+        <span class="endpoint-path">/manga/:id</span>
+        <span class="endpoint-summary">Get single manga details</span>
+        <span class="endpoint-arrow">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Authorization</div>
+          <span class="auth-badge auth-required">🔒 JWT Required</span>
+        </div>
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Path Parameter</div>
+          <table class="params-table">
+            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody><tr><td class="param-name">id</td><td class="param-type">string</td><td class="param-desc">Manga slug ID (e.g., one-piece)</td></tr></tbody>
+          </table>
+        </div>
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Response — 200 OK</div>
+          <p style="color:var(--muted);font-size:13px">Same structure as a single item in the GET /manga array response.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIBRARY ENDPOINTS -->
+  <section class="docs-section" id="library">
+    <div class="section-protocol-header">
+      <div class="section-protocol-icon icon-http">HTTP</div>
+      <div>
+        <div class="section-title">USER LIBRARY</div>
+        <div class="section-port">POST · GET /users/library · PUT /users/progress</div>
+      </div>
+    </div>
+    <p class="section-desc">Manage a user's personal manga library with reading, plan-to-read, and completed lists, and track chapter progress.</p>
+
+    <div class="endpoint-card">
+      <div class="endpoint-head" onclick="toggleEndpoint(this)">
+        <span class="method-badge badge-POST">POST</span>
+        <span class="endpoint-path">/users/library</span>
+        <span class="endpoint-summary">Add manga to library</span>
+        <span class="endpoint-arrow">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Authorization</div>
+          <span class="auth-badge auth-required">🔒 JWT Required</span>
+        </div>
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Request Body</div>
+          <table class="params-table">
+            <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td class="param-name">manga_id</td><td class="param-type">string</td><td class="param-req">required</td><td class="param-desc">Manga slug ID</td></tr>
+              <tr><td class="param-name">status</td><td class="param-type">string</td><td class="param-req">required</td><td class="param-desc">reading, plan_to_read, or completed</td></tr>
+              <tr><td class="param-name">current_chapter</td><td class="param-type">int</td><td class="param-opt">optional</td><td class="param-desc">Current chapter (default: 0)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Response — 201 Created</div>
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+{<br>
+&nbsp;&nbsp;<span class="f">"message"</span><span class="p">: </span><span class="s">"Added to library"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"manga_id"</span><span class="p">: </span><span class="s">"one-piece"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"status"</span><span class="p">: </span><span class="s">"reading"</span><br>
+}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="endpoint-head" onclick="toggleEndpoint(this)">
+        <span class="method-badge badge-GET">GET</span>
+        <span class="endpoint-path">/users/library</span>
+        <span class="endpoint-summary">Get user's full library</span>
+        <span class="endpoint-arrow">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Authorization</div>
+          <span class="auth-badge auth-required">🔒 JWT Required</span>
+        </div>
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Response — 200 OK</div>
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+{<br>
+&nbsp;&nbsp;<span class="f">"user_id"</span><span class="p">: </span><span class="s">"user123"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"reading_lists"</span><span class="p">: {</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">"reading"</span><span class="p">: [</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">"manga_id"</span><span class="p">: </span><span class="s">"one-piece"</span><span class="p">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">"current_chapter"</span><span class="p">: </span><span class="n">1095</span><span class="p">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">"status"</span><span class="p">: </span><span class="s">"reading"</span><span class="p">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">"last_updated"</span><span class="p">: </span><span class="s">"2024-01-20T10:30:00Z"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="p">],</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">"completed"</span><span class="p">: [],</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="f">"plan_to_read"</span><span class="p">: []</span><br>
+&nbsp;&nbsp;}<br>
+}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="endpoint-head" onclick="toggleEndpoint(this)">
+        <span class="method-badge badge-PUT">PUT</span>
+        <span class="endpoint-path">/users/progress</span>
+        <span class="endpoint-summary">Update reading chapter progress</span>
+        <span class="endpoint-arrow">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Authorization</div>
+          <span class="auth-badge auth-required">🔒 JWT Required</span>
+        </div>
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Request Body</div>
+          <table class="params-table">
+            <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td class="param-name">manga_id</td><td class="param-type">string</td><td class="param-req">required</td><td class="param-desc">Manga slug ID</td></tr>
+              <tr><td class="param-name">current_chapter</td><td class="param-type">int</td><td class="param-req">required</td><td class="param-desc">Chapter number to set as current</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Side Effect</div>
+          <p style="font-size:13px;color:var(--muted)">Triggers a TCP broadcast to all connected clients with the updated progress data.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TCP -->
+  <section class="docs-section" id="tcp">
+    <div class="section-protocol-header">
+      <div class="section-protocol-icon icon-tcp">TCP</div>
+      <div>
+        <div class="section-title">TCP PROGRESS SYNC</div>
+        <div class="section-port">localhost:9090</div>
+      </div>
+    </div>
+    <p class="section-desc">Persistent TCP connections for broadcasting real-time progress updates to all connected clients. JSON messages delimited by newlines.</p>
+
+    <div class="endpoint-section" style="margin-bottom:1.5rem">
+      <div class="endpoint-section-title">Connection</div>
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-lang">Shell</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+nc localhost <span class="n">9090</span>
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="endpoint-head" onclick="toggleEndpoint(this)">
+        <span class="method-badge badge-MSG">MSG</span>
+        <span class="endpoint-path">ProgressUpdate</span>
+        <span class="endpoint-summary">Broadcast reading progress to all clients</span>
+        <span class="endpoint-arrow">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Message Schema</div>
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+{<br>
+&nbsp;&nbsp;<span class="f">"user_id"</span><span class="p">: </span><span class="s">"user123"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"manga_id"</span><span class="p">: </span><span class="s">"one-piece"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"chapter"</span><span class="p">: </span><span class="n">1095</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"timestamp"</span><span class="p">: </span><span class="n">1705745400</span><br>
+}
+          </div>
+        </div>
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Behavior</div>
+          <p style="font-size:13px;color:var(--muted)">Server receives the message and broadcasts it to all currently connected TCP clients. The HTTP API triggers this automatically when <code style="font-family:var(--font-mono);color:var(--blue)">PUT /users/progress</code> is called.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- UDP -->
+  <section class="docs-section" id="udp">
+    <div class="section-protocol-header">
+      <div class="section-protocol-icon icon-udp">UDP</div>
+      <div>
+        <div class="section-title">UDP NOTIFICATIONS</div>
+        <div class="section-port">localhost:9091</div>
+      </div>
+    </div>
+    <p class="section-desc">Stateless UDP server for chapter release notifications. Clients register their address, then receive broadcast datagrams when new chapters are available.</p>
+
+    <div class="endpoint-card">
+      <div class="endpoint-head" onclick="toggleEndpoint(this)">
+        <span class="method-badge badge-MSG">MSG</span>
+        <span class="endpoint-path">Register</span>
+        <span class="endpoint-summary">Subscribe to notifications</span>
+        <span class="endpoint-arrow">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Datagram Payload</div>
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+{<br>
+&nbsp;&nbsp;<span class="f">"type"</span><span class="p">: </span><span class="s">"register"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"user_id"</span><span class="p">: </span><span class="s">"user123"</span><br>
+}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="endpoint-head" onclick="toggleEndpoint(this)">
+        <span class="method-badge badge-SUB">SUB</span>
+        <span class="endpoint-path">ChapterRelease</span>
+        <span class="endpoint-summary">Incoming notification broadcast</span>
+        <span class="endpoint-arrow">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Broadcast Payload (received by client)</div>
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+{<br>
+&nbsp;&nbsp;<span class="f">"type"</span><span class="p">: </span><span class="s">"chapter_release"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"manga_id"</span><span class="p">: </span><span class="s">"one-piece"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"message"</span><span class="p">: </span><span class="s">"Chapter 1111 of One Piece is now available!"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"timestamp"</span><span class="p">: </span><span class="n">1705745400</span><br>
+}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WEBSOCKET -->
+  <section class="docs-section" id="websocket">
+    <div class="section-protocol-header">
+      <div class="section-protocol-icon icon-ws">WS</div>
+      <div>
+        <div class="section-title">WEBSOCKET CHAT</div>
+        <div class="section-port">ws://localhost:8080/ws/chat</div>
+      </div>
+    </div>
+    <p class="section-desc">Bidirectional WebSocket connection for real-time manga discussions. Supports join/leave events and live message broadcasting to all connected users.</p>
+
+    <div class="endpoint-section" style="margin-bottom:1.5rem">
+      <div class="endpoint-section-title">Connection URL</div>
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-lang">URL</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+ws://localhost:<span class="n">8080</span>/ws/chat?token=<span class="s">&lt;jwt_token&gt;</span>&amp;username=<span class="s">&lt;username&gt;</span>
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="endpoint-head" onclick="toggleEndpoint(this)">
+        <span class="method-badge badge-EVT">EVT</span>
+        <span class="endpoint-path">message (send)</span>
+        <span class="endpoint-summary">Send a chat message</span>
+        <span class="endpoint-arrow">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Message Schema (client → server)</div>
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+{<br>
+&nbsp;&nbsp;<span class="f">"user_id"</span><span class="p">: </span><span class="s">"user123"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"username"</span><span class="p">: </span><span class="s">"manga_fan"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"message"</span><span class="p">: </span><span class="s">"One Piece chapter 1111 was amazing!"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="f">"timestamp"</span><span class="p">: </span><span class="n">1705745400000</span><br>
+}
+          </div>
+        </div>
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Broadcast (server → all clients)</div>
+          <p style="font-size:13px;color:var(--muted)">The server broadcasts the same message JSON to all connected WebSocket clients, including the sender.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- gRPC -->
+  <section class="docs-section" id="grpc">
+    <div class="section-protocol-header">
+      <div class="section-protocol-icon icon-grpc">gRPC</div>
+      <div>
+        <div class="section-title">gRPC SERVICE</div>
+        <div class="section-port">localhost:50051</div>
+      </div>
+    </div>
+    <p class="section-desc">Internal Protocol Buffer service for efficient service-to-service communication. Used by the HTTP API to query manga data from the gRPC microservice.</p>
+
+    <div class="endpoint-section" style="margin-bottom:1.5rem">
+      <div class="endpoint-section-title">Proto Definition</div>
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-lang">Protobuf</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+<span class="k">service</span> <span class="f">MangaService</span> {<br>
+&nbsp;&nbsp;<span class="k">rpc</span> <span class="f">GetManga</span>(<span class="f">GetMangaRequest</span>) <span class="k">returns</span> (<span class="f">MangaResponse</span>);<br>
+&nbsp;&nbsp;<span class="k">rpc</span> <span class="f">SearchManga</span>(<span class="f">SearchRequest</span>) <span class="k">returns</span> (<span class="f">SearchResponse</span>);<br>
+&nbsp;&nbsp;<span class="k">rpc</span> <span class="f">UpdateProgress</span>(<span class="f">ProgressRequest</span>) <span class="k">returns</span> (<span class="f">ProgressResponse</span>);<br>
+}
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="endpoint-head" onclick="toggleEndpoint(this)">
+        <span class="method-badge badge-RPC">RPC</span>
+        <span class="endpoint-path">GetManga</span>
+        <span class="endpoint-summary">Fetch single manga by ID</span>
+        <span class="endpoint-arrow">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Request</div>
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">Protobuf</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+<span class="k">message</span> <span class="f">GetMangaRequest</span> {<br>
+&nbsp;&nbsp;<span class="k">string</span> manga_id = <span class="n">1</span>;<br>
+}
+          </div>
+        </div>
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Response</div>
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">Protobuf</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+<span class="k">message</span> <span class="f">MangaResponse</span> {<br>
+&nbsp;&nbsp;<span class="k">string</span> id = <span class="n">1</span>;<br>
+&nbsp;&nbsp;<span class="k">string</span> title = <span class="n">2</span>;<br>
+&nbsp;&nbsp;<span class="k">string</span> author = <span class="n">3</span>;<br>
+&nbsp;&nbsp;<span class="k">repeated string</span> genres = <span class="n">4</span>;<br>
+&nbsp;&nbsp;<span class="k">string</span> status = <span class="n">5</span>;<br>
+&nbsp;&nbsp;<span class="k">int32</span> total_chapters = <span class="n">6</span>;<br>
+}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="endpoint-head" onclick="toggleEndpoint(this)">
+        <span class="method-badge badge-RPC">RPC</span>
+        <span class="endpoint-path">SearchManga</span>
+        <span class="endpoint-summary">Search with filters via gRPC</span>
+        <span class="endpoint-arrow">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Request</div>
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">Protobuf</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+<span class="k">message</span> <span class="f">SearchRequest</span> {<br>
+&nbsp;&nbsp;<span class="k">string</span> query = <span class="n">1</span>;<br>
+&nbsp;&nbsp;<span class="k">string</span> genre = <span class="n">2</span>;<br>
+&nbsp;&nbsp;<span class="k">string</span> status = <span class="n">3</span>;<br>
+&nbsp;&nbsp;<span class="k">int32</span> limit = <span class="n">4</span>;<br>
+}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="endpoint-head" onclick="toggleEndpoint(this)">
+        <span class="method-badge badge-RPC">RPC</span>
+        <span class="endpoint-path">UpdateProgress</span>
+        <span class="endpoint-summary">Sync reading progress internally</span>
+        <span class="endpoint-arrow">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="endpoint-section">
+          <div class="endpoint-section-title">Request</div>
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">Protobuf</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+<span class="k">message</span> <span class="f">ProgressRequest</span> {<br>
+&nbsp;&nbsp;<span class="k">string</span> user_id = <span class="n">1</span>;<br>
+&nbsp;&nbsp;<span class="k">string</span> manga_id = <span class="n">2</span>;<br>
+&nbsp;&nbsp;<span class="k">int32</span> chapter = <span class="n">3</span>;<br>
+&nbsp;&nbsp;<span class="k">int64</span> timestamp = <span class="n">4</span>;<br>
+}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:2rem;padding:1.25rem;background:var(--ink-3);border:1px solid var(--faint);border-radius:6px">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.75rem;font-weight:700">Test with grpcurl</div>
+      <div class="code-block" style="margin:0">
+        <div class="code-block-header"><span class="code-lang">Shell</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+grpcurl -plaintext -d <span class="s">'{"manga_id":"one-piece"}'</span> \<br>
+&nbsp;&nbsp;localhost:<span class="n">50051</span> manga.MangaService/GetManga
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+function toggleEndpoint(head) {
+  const body = head.nextElementSibling;
+  const isOpen = body.classList.contains('open');
+  head.classList.toggle('open', !isOpen);
+  body.classList.toggle('open', !isOpen);
+}
+
+function copyCode(btn) {
+  const block = btn.closest('.code-block');
+  const text = block.innerText.replace('copy\n','').replace('copied\n','').trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// Scrollspy
+const sidebarLinks = document.querySelectorAll('.sidebar-link[href^="#"]');
+const sections = document.querySelectorAll('.docs-section[id]');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      sidebarLinks.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector(`.sidebar-link[href="#${e.target.id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

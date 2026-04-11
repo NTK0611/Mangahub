@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  api-server:
+    build:
+      context: .
+      args:
+        - SERVICE_NAME=api-server
+    container_name: mangahub_api
+    # Ánh xạ các cổng ra máy chủ thật (máy tính của bạn)
+    ports:
+      - "8080:8080"       # HTTP REST & WebSocket
+      - "9090:9090"       # TCP Sync
+      - "9091:9091/udp"   # UDP Notifications (Lưu ý có cờ /udp)
+    environment:
+      # Thay chữ localhost thành tên service grpc-server
+      - GRPC_ADDR=grpc-server:50051
+      # Trỏ đường dẫn DB vào thư mục dùng chung
+      - DB_PATH=/data/mangahub.db
+      - HTTP_PORT=8080
+      - TCP_PORT=9090
+      - UDP_PORT=9091
+    volumes:
+      - mangahub_shared_db:/data
+    depends_on:
+      - grpc-server
+    restart: unless-stopped
+
+  grpc-server:
+    build:
+      context: .
+      args:
+        - SERVICE_NAME=grpc-server
+    container_name: mangahub_grpc
+    ports:
+      - "50051:50051"
+    environment:
+      - GRPC_PORT=50051
+      - DB_PATH=/data/mangahub.db
+    volumes:
+      - mangahub_shared_db:/data
+    restart: unless-stopped
+
+# Khởi tạo một volume chung để 2 server cùng trỏ vào 1 file SQLite
+volumes:
+  mangahub_shared_db:

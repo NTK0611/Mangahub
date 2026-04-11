@@ -1,0 +1,2020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MangaHub — Track Your Manga</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet" />
+
+<style>
+/* ═══════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════ */
+:root {
+  --ink:        #0d0d0f;
+  --ink-2:      #141418;
+  --ink-3:      #1e1e24;
+  --ink-4:      #2a2a33;
+  --panel:      #18181f;
+  --red:        #e8232a;
+  --red-dim:    #9b1218;
+  --red-glow:   rgba(232,35,42,0.15);
+  --gold:       #f5c842;
+  --white:      #f0ede8;
+  --muted:      #7a7882;
+  --faint:      #2e2d38;
+
+  --font-head:  'Bebas Neue', sans-serif;
+  --font-body:  'Playfair Display', serif;
+  --font-ui:    'Noto Sans JP', sans-serif;
+  --font-mono:  'DM Mono', monospace;
+
+  --radius:     4px;
+  --radius-lg:  8px;
+  --shadow:     0 4px 30px rgba(0,0,0,0.6);
+  --transition: 220ms cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ═══════════════════════════════════════
+   RESET + BASE
+═══════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--ink);
+  color: var(--white);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+button, input, select, textarea { font-family: inherit; }
+img { max-width: 100%; }
+::selection { background: var(--red); color: #fff; }
+
+/* ═══════════════════════════════════════
+   SCROLLBAR
+═══════════════════════════════════════ */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--ink-2); }
+::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--red-dim); }
+
+/* ═══════════════════════════════════════
+   HALFTONE TEXTURE OVERLAY
+═══════════════════════════════════════ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ═══════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════ */
+#app { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ═══════════════════════════════════════
+   NAV
+═══════════════════════════════════════ */
+nav#navbar {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(13,13,15,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--faint);
+  padding: 0 2rem;
+  height: 60px;
+  align-items: center;
+  gap: 2rem;
+}
+nav#navbar.visible { display: flex; }
+
+.nav-logo {
+  font-family: var(--font-head);
+  font-size: 2rem;
+  letter-spacing: 0.04em;
+  color: var(--red);
+  white-space: nowrap;
+}
+.nav-logo span { color: var(--white); }
+
+.nav-links {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
+  align-items: center;
+}
+.nav-link {
+  padding: 6px 16px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--transition), background var(--transition);
+  letter-spacing: 0.04em;
+}
+.nav-link:hover, .nav-link.active {
+  color: var(--white);
+  background: var(--ink-3);
+}
+.nav-link.active { color: var(--red); }
+
+.nav-right { display: flex; align-items: center; gap: 1rem; margin-left: auto; }
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.nav-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--red);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-head);
+  font-size: 14px;
+  color: #fff;
+  letter-spacing: 0;
+}
+.btn-logout {
+  padding: 5px 14px;
+  font-size: 12px;
+  background: transparent;
+  border: 1px solid var(--faint);
+  color: var(--muted);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all var(--transition);
+  letter-spacing: 0.04em;
+}
+.btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+/* ═══════════════════════════════════════
+   PAGES
+═══════════════════════════════════════ */
+.page { display: none; flex: 1; }
+.page.active { display: flex; flex-direction: column; }
+
+/* ═══════════════════════════════════════
+   AUTH PAGE
+═══════════════════════════════════════ */
+#page-auth {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 480px;
+  position: relative;
+}
+
+.auth-hero {
+  background: linear-gradient(135deg, var(--ink) 0%, #1a0a0c 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4rem;
+  position: relative;
+  overflow: hidden;
+}
+.auth-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 20% 50%, rgba(232,35,42,0.12) 0%, transparent 70%),
+    radial-gradient(circle at 80% 80%, rgba(245,200,66,0.05) 0%, transparent 50%);
+}
+.auth-hero-title {
+  font-family: var(--font-head);
+  font-size: clamp(5rem, 10vw, 9rem);
+  line-height: 0.9;
+  letter-spacing: 0.02em;
+  position: relative;
+  z-index: 1;
+}
+.auth-hero-title .line-red { color: var(--red); display: block; }
+.auth-hero-title .line-white { color: var(--white); display: block; }
+.auth-hero-subtitle {
+  margin-top: 1.5rem;
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 1.15rem;
+  color: var(--muted);
+  position: relative;
+  z-index: 1;
+  max-width: 400px;
+}
+.auth-hero-tags {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 3rem;
+  position: relative;
+  z-index: 1;
+}
+.auth-tag {
+  padding: 4px 12px;
+  border: 1px solid var(--faint);
+  border-radius: 2px;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Manga panel decorations */
+.panel-deco {
+  position: absolute;
+  border: 1px solid rgba(232,35,42,0.2);
+  border-radius: 2px;
+}
+.panel-deco-1 { width: 200px; height: 280px; right: -40px; top: 60px; transform: rotate(8deg); }
+.panel-deco-2 { width: 160px; height: 220px; right: 60px; bottom: 80px; transform: rotate(-5deg); opacity: 0.5; }
+
+.auth-panel {
+  background: var(--ink-2);
+  border-left: 1px solid var(--faint);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 3rem;
+}
+.auth-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid var(--faint);
+}
+.auth-tab {
+  padding: 10px 24px;
+  font-family: var(--font-head);
+  font-size: 1.4rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all var(--transition);
+}
+.auth-tab.active { color: var(--red); border-bottom-color: var(--red); }
+
+.auth-form { display: flex; flex-direction: column; gap: 1.2rem; }
+.auth-form.hidden { display: none; }
+
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: var(--font-ui);
+}
+.form-input {
+  background: var(--ink-3);
+  border: 1px solid var(--faint);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  color: var(--white);
+  font-size: 14px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+}
+.form-input:focus {
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px var(--red-glow);
+}
+.form-input::placeholder { color: var(--muted); }
+
+.btn-primary {
+  padding: 12px 24px;
+  background: var(--red);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-head);
+  font-size: 1.3rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+}
+.btn-primary:hover {
+  background: #c41a1f;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(232,35,42,0.4);
+}
+.btn-primary:active { transform: translateY(0); }
+
+.auth-error {
+  background: rgba(232,35,42,0.12);
+  border: 1px solid rgba(232,35,42,0.4);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #f88;
+  display: none;
+}
+.auth-error.visible { display: block; }
+
+/* ═══════════════════════════════════════
+   BROWSE PAGE
+═══════════════════════════════════════ */
+#page-browse {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.page-title {
+  font-family: var(--font-head);
+  font-size: 3.5rem;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+.page-title-accent { color: var(--red); }
+
+.search-bar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.search-input-wrap {
+  flex: 1;
+  min-width: 240px;
+  position: relative;
+}
+.search-input-wrap svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+.search-input {
+  width: 100%;
+  background: var(--ink-3);
+  border: 1px solid var(--faint);
+  border-radius: var(--radius);
+  padding: 10px 14px 10px 42px;
+  color: var(--white);
+  font-size: 14px;
+  outline: none;
+  transition: border-color var(--transition);
+}
+.search-input:focus { border-color: var(--red); }
+.search-input::placeholder { color: var(--muted); }
+
+.genre-filter {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+.genre-chip {
+  padding: 5px 14px;
+  border: 1px solid var(--faint);
+  border-radius: 2px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all var(--transition);
+  background: transparent;
+}
+.genre-chip:hover { border-color: var(--red); color: var(--red); }
+.genre-chip.active { background: var(--red); border-color: var(--red); color: #fff; }
+
+.manga-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1.5rem;
+}
+
+.manga-card {
+  background: var(--panel);
+  border: 1px solid var(--faint);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+  position: relative;
+}
+.manga-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--red-dim);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 0 1px var(--red-dim);
+}
+
+.manga-cover {
+  width: 100%;
+  aspect-ratio: 2/3;
+  background: var(--ink-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+.manga-cover img { width: 100%; height: 100%; object-fit: cover; }
+.manga-cover-placeholder {
+  font-family: var(--font-head);
+  font-size: 3.5rem;
+  color: var(--faint);
+  letter-spacing: 0.04em;
+  text-align: center;
+  padding: 1rem;
+  word-break: break-all;
+  line-height: 1;
+}
+.manga-status-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 8px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+}
+.badge-ongoing { background: #1a3a1a; color: #4caf50; }
+.badge-completed { background: #1a2840; color: #64b5f6; }
+
+.manga-info { padding: 12px; }
+.manga-title-card {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 4px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.manga-author-card { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+.manga-genres-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.genre-tag {
+  padding: 2px 6px;
+  background: var(--ink-4);
+  border-radius: 2px;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.manga-chapters {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.manga-chapters span { color: var(--gold); }
+
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  color: var(--muted);
+  font-family: var(--font-head);
+  font-size: 1.5rem;
+  letter-spacing: 0.1em;
+  gap: 1rem;
+}
+.spinner {
+  width: 24px; height: 24px;
+  border: 2px solid var(--faint);
+  border-top-color: var(--red);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════
+   MANGA DETAIL MODAL
+═══════════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition);
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--ink-2);
+  border: 1px solid var(--faint);
+  border-radius: var(--radius-lg);
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: translateY(20px);
+  transition: transform var(--transition);
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+
+.modal-header {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem;
+  border-bottom: 1px solid var(--faint);
+}
+.modal-cover {
+  width: 140px;
+  min-width: 140px;
+  aspect-ratio: 2/3;
+  background: var(--ink-3);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-cover img { width: 100%; height: 100%; object-fit: cover; }
+.modal-cover-placeholder {
+  font-family: var(--font-head);
+  font-size: 2.5rem;
+  color: var(--faint);
+  text-align: center;
+  padding: 0.5rem;
+  word-break: break-all;
+  line-height: 1;
+}
+
+.modal-meta { flex: 1; }
+.modal-title {
+  font-family: var(--font-head);
+  font-size: 2.2rem;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+.modal-author { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+.modal-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+.modal-stat { display: flex; flex-direction: column; gap: 2px; }
+.modal-stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.modal-stat-value { font-family: var(--font-mono); font-size: 16px; color: var(--white); }
+.modal-stat-value.red { color: var(--red); }
+.modal-genre-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1.5rem; }
+.modal-genre-tag {
+  padding: 4px 10px;
+  border: 1px solid var(--faint);
+  border-radius: 2px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.modal-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.btn-add {
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  font-family: var(--font-head);
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all var(--transition);
+  border: 1px solid;
+}
+.btn-add-reading { background: var(--red); color: #fff; border-color: var(--red); }
+.btn-add-reading:hover { background: #c41a1f; }
+.btn-add-plan { background: transparent; color: var(--muted); border-color: var(--faint); }
+.btn-add-plan:hover { border-color: var(--white); color: var(--white); }
+.btn-add-completed { background: transparent; color: var(--gold); border-color: rgba(245,200,66,0.4); }
+.btn-add-completed:hover { background: rgba(245,200,66,0.1); }
+
+.modal-body { padding: 2rem; }
+.modal-section-title {
+  font-family: var(--font-head);
+  font-size: 1.2rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+}
+.modal-description {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--white);
+  line-height: 1.8;
+  opacity: 0.85;
+}
+
+.progress-updater {
+  background: var(--ink-3);
+  border: 1px solid var(--faint);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-top: 1.5rem;
+}
+.progress-updater h4 {
+  font-family: var(--font-head);
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 1rem;
+  color: var(--muted);
+}
+.progress-row { display: flex; gap: 0.75rem; align-items: center; }
+.progress-input {
+  width: 80px;
+  background: var(--ink-4);
+  border: 1px solid var(--faint);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  color: var(--white);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  outline: none;
+  transition: border-color var(--transition);
+  text-align: center;
+}
+.progress-input:focus { border-color: var(--red); }
+.progress-label { font-size: 13px; color: var(--muted); }
+.btn-update-progress {
+  padding: 8px 16px;
+  background: var(--ink-4);
+  border: 1px solid var(--faint);
+  border-radius: var(--radius);
+  color: var(--white);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all var(--transition);
+  letter-spacing: 0.04em;
+}
+.btn-update-progress:hover { border-color: var(--red); color: var(--red); }
+
+.modal-close {
+  position: sticky;
+  top: 0;
+  float: right;
+  margin: 1rem 1rem 0 0;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--ink-4);
+  border: 1px solid var(--faint);
+  color: var(--muted);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  transition: all var(--transition);
+  z-index: 10;
+}
+.modal-close:hover { background: var(--red); color: #fff; border-color: var(--red); }
+
+/* ═══════════════════════════════════════
+   LIBRARY PAGE
+═══════════════════════════════════════ */
+#page-library { padding: 2rem; max-width: 1400px; margin: 0 auto; width: 100%; }
+
+.library-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--faint);
+  margin-bottom: 2rem;
+}
+.library-tab {
+  padding: 10px 28px;
+  font-family: var(--font-head);
+  font-size: 1.3rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all var(--transition);
+}
+.library-tab.active { color: var(--red); border-bottom-color: var(--red); }
+.library-tab:hover:not(.active) { color: var(--white); }
+
+.library-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--faint);
+  font-size: 10px;
+  font-family: var(--font-ui);
+  margin-left: 6px;
+  color: var(--white);
+  vertical-align: middle;
+}
+
+.library-section { display: none; }
+.library-section.active { display: block; }
+
+.library-item {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1rem;
+  background: var(--panel);
+  border: 1px solid var(--faint);
+  border-radius: var(--radius);
+  margin-bottom: 0.75rem;
+  transition: border-color var(--transition);
+  cursor: pointer;
+}
+.library-item:hover { border-color: var(--red-dim); }
+
+.library-cover {
+  width: 50px;
+  height: 70px;
+  background: var(--ink-3);
+  border-radius: var(--radius);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.library-cover img { width: 100%; height: 100%; object-fit: cover; }
+.library-cover-ph {
+  font-family: var(--font-head);
+  font-size: 1.1rem;
+  color: var(--faint);
+  text-align: center;
+  word-break: break-all;
+  line-height: 1;
+  padding: 2px;
+}
+
+.library-meta { flex: 1; }
+.library-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+.library-author-sm { font-size: 12px; color: var(--muted); }
+
+.progress-bar-wrap { margin-top: 8px; }
+.progress-bar-track {
+  height: 4px;
+  background: var(--faint);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--red), var(--gold));
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+.progress-text { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.progress-text span { color: var(--gold); }
+
+.library-actions { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end; }
+.btn-sm {
+  padding: 5px 12px;
+  font-size: 11px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all var(--transition);
+  border: 1px solid var(--faint);
+  background: transparent;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.btn-sm:hover { border-color: var(--red); color: var(--red); }
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--muted);
+}
+.empty-icon {
+  font-family: var(--font-head);
+  font-size: 5rem;
+  color: var(--faint);
+  line-height: 1;
+  display: block;
+  margin-bottom: 1rem;
+}
+.empty-text { font-family: var(--font-body); font-style: italic; font-size: 1rem; }
+
+/* ═══════════════════════════════════════
+   CHAT PAGE
+═══════════════════════════════════════ */
+#page-chat {
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--faint);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  flex: 1;
+  min-height: 500px;
+}
+
+.chat-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--faint);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--ink-2);
+}
+.chat-status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: background var(--transition);
+}
+.chat-status-dot.connected { background: #4caf50; box-shadow: 0 0 6px #4caf50; }
+.chat-header-title { font-family: var(--font-head); font-size: 1.4rem; letter-spacing: 0.06em; }
+.chat-status-text { font-size: 11px; color: var(--muted); margin-left: auto; letter-spacing: 0.04em; }
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.chat-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: fadeSlideIn 0.2s ease;
+}
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.chat-msg.system { align-items: center; }
+.chat-msg-system-text {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  padding: 2px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--faint);
+}
+
+.chat-msg-header { display: flex; align-items: baseline; gap: 8px; }
+.chat-msg-user {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--red);
+  letter-spacing: 0.04em;
+}
+.chat-msg-user.self { color: var(--gold); }
+.chat-msg-time { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+.chat-msg-text {
+  font-size: 14px;
+  color: var(--white);
+  line-height: 1.5;
+  padding: 8px 12px;
+  background: var(--ink-3);
+  border-radius: var(--radius);
+  border-left: 2px solid var(--faint);
+  max-width: 80%;
+}
+.chat-msg.self .chat-msg-text { border-left-color: var(--gold); background: rgba(245,200,66,0.06); }
+
+.chat-input-row {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--faint);
+  display: flex;
+  gap: 0.75rem;
+  background: var(--ink-2);
+}
+.chat-input {
+  flex: 1;
+  background: var(--ink-3);
+  border: 1px solid var(--faint);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  color: var(--white);
+  font-size: 14px;
+  outline: none;
+  transition: border-color var(--transition);
+}
+.chat-input:focus { border-color: var(--red); }
+.chat-input::placeholder { color: var(--muted); }
+.btn-send {
+  padding: 10px 20px;
+  background: var(--red);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-head);
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.btn-send:hover { background: #c41a1f; }
+.btn-send:disabled { background: var(--faint); cursor: not-allowed; }
+
+/* ═══════════════════════════════════════
+   STATUS PAGE
+═══════════════════════════════════════ */
+#page-status { padding: 2rem; max-width: 1200px; margin: 0 auto; width: 100%; }
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+.status-card {
+  background: var(--panel);
+  border: 1px solid var(--faint);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  transition: border-color var(--transition);
+}
+.status-card:hover { border-color: var(--faint); }
+
+.status-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.protocol-icon {
+  width: 44px; height: 44px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-head);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+.icon-http { background: rgba(100,181,246,0.15); color: #64b5f6; border: 1px solid rgba(100,181,246,0.3); }
+.icon-tcp { background: rgba(232,35,42,0.15); color: var(--red); border: 1px solid rgba(232,35,42,0.3); }
+.icon-udp { background: rgba(245,200,66,0.15); color: var(--gold); border: 1px solid rgba(245,200,66,0.3); }
+.icon-ws { background: rgba(76,175,80,0.15); color: #4caf50; border: 1px solid rgba(76,175,80,0.3); }
+.icon-grpc { background: rgba(186,104,200,0.15); color: #ba68c8; border: 1px solid rgba(186,104,200,0.3); }
+
+.status-card-name {
+  font-family: var(--font-head);
+  font-size: 1.5rem;
+  letter-spacing: 0.06em;
+}
+.status-card-port { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.status-dot.online { background: #4caf50; }
+.status-dot.offline { background: var(--red); }
+.status-dot.checking { background: var(--gold); animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.status-desc { font-size: 13px; color: var(--muted); line-height: 1.6; font-family: var(--font-body); font-style: italic; }
+
+.status-endpoints { margin-top: 1rem; }
+.endpoint-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--faint);
+  font-size: 12px;
+}
+.endpoint-item:last-child { border-bottom: none; }
+.method-badge {
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+.method-get { background: rgba(76,175,80,0.2); color: #4caf50; }
+.method-post { background: rgba(100,181,246,0.2); color: #64b5f6; }
+.method-put { background: rgba(245,200,66,0.2); color: var(--gold); }
+.method-delete { background: rgba(232,35,42,0.2); color: var(--red); }
+.endpoint-path { font-family: var(--font-mono); color: var(--white); font-size: 11px; }
+.endpoint-note { font-size: 11px; color: var(--muted); margin-left: auto; }
+
+.btn-check-status {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--faint);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition);
+  margin-top: 1rem;
+  letter-spacing: 0.04em;
+}
+.btn-check-status:hover { border-color: var(--white); color: var(--white); }
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+.toast-container {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+.toast {
+  background: var(--ink-2);
+  border: 1px solid var(--faint);
+  border-radius: var(--radius);
+  padding: 12px 18px;
+  font-size: 13px;
+  color: var(--white);
+  box-shadow: var(--shadow);
+  animation: toastIn 0.25s ease;
+  max-width: 320px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.toast.success { border-left: 3px solid #4caf50; }
+.toast.error { border-left: 3px solid var(--red); }
+.toast.info { border-left: 3px solid #64b5f6; }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════ */
+@media (max-width: 860px) {
+  #page-auth { grid-template-columns: 1fr; }
+  .auth-hero { display: none; }
+  nav#navbar { padding: 0 1rem; gap: 1rem; }
+  #page-browse, #page-library, #page-chat, #page-status { padding: 1rem; }
+  .modal { max-width: 95vw; }
+  .modal-header { flex-direction: column; }
+}
+
+/* ═══════════════════════════════════════
+   PAGE ENTER ANIMATION
+═══════════════════════════════════════ */
+.page-enter { animation: pageEnter 0.3s ease; }
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="nav-logo">MANGA<span>HUB</span></div>
+  <div class="nav-links">
+    <div class="nav-link active" onclick="navigate('browse')" data-page="browse">Browse</div>
+    <div class="nav-link" onclick="navigate('library')" data-page="library">My Library</div>
+    <div class="nav-link" onclick="navigate('chat')" data-page="chat">Chat</div>
+    <div class="nav-link" onclick="navigate('status')" data-page="status">System Status</div>
+    <a href="api-docs.html" target="_blank" class="nav-link" style="margin-left:auto">API Docs ↗</a>
+  </div>
+  <div class="nav-right">
+    <div class="nav-user">
+      <div class="nav-avatar" id="nav-avatar">?</div>
+      <span id="nav-username">—</span>
+    </div>
+    <button class="btn-logout" onclick="logout()">Sign Out</button>
+  </div>
+</nav>
+
+<div id="app">
+  <!-- AUTH PAGE -->
+  <div class="page active" id="page-auth">
+    <div class="auth-hero">
+      <div class="panel-deco panel-deco-1"></div>
+      <div class="panel-deco panel-deco-2"></div>
+      <div class="auth-hero-title">
+        <span class="line-red">MANGA</span>
+        <span class="line-white">HUB</span>
+      </div>
+      <p class="auth-hero-subtitle">Track every chapter. Discover your next obsession. Your manga world, organized.</p>
+      <div class="auth-hero-tags">
+        <span class="auth-tag">Shounen</span>
+        <span class="auth-tag">Seinen</span>
+        <span class="auth-tag">Shoujo</span>
+        <span class="auth-tag">Josei</span>
+        <span class="auth-tag">Isekai</span>
+        <span class="auth-tag">Slice of Life</span>
+      </div>
+    </div>
+
+    <div class="auth-panel">
+      <div class="auth-tabs">
+        <div class="auth-tab active" onclick="switchAuthTab('login')">Sign In</div>
+        <div class="auth-tab" onclick="switchAuthTab('register')">Register</div>
+      </div>
+
+      <!-- Login Form -->
+      <div class="auth-form" id="login-form">
+        <div class="auth-error" id="login-error"></div>
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input class="form-input" id="login-username" type="text" placeholder="your_username" autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" />
+        </div>
+        <button class="btn-primary" onclick="doLogin()">SIGN IN</button>
+      </div>
+
+      <!-- Register Form -->
+      <div class="auth-form hidden" id="register-form">
+        <div class="auth-error" id="register-error"></div>
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input class="form-input" id="reg-username" type="text" placeholder="choose a username" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" id="reg-email" type="email" placeholder="you@email.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" id="reg-password" type="password" placeholder="min 8 characters" />
+        </div>
+        <button class="btn-primary" onclick="doRegister()">CREATE ACCOUNT</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BROWSE PAGE -->
+  <div class="page" id="page-browse">
+    <div style="padding:2rem; max-width:1400px; margin:0 auto; width:100%">
+      <div class="page-header">
+        <h1 class="page-title">BROWSE <span class="page-title-accent">MANGA</span></h1>
+      </div>
+
+      <div class="search-bar">
+        <div class="search-input-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input class="search-input" id="search-input" type="text" placeholder="Search by title or author..." oninput="onSearch()" />
+        </div>
+        <select class="form-input" id="status-filter" onchange="onSearch()" style="width:auto; padding:10px 14px;">
+          <option value="">All Status</option>
+          <option value="ongoing">Ongoing</option>
+          <option value="completed">Completed</option>
+        </select>
+      </div>
+
+      <div class="genre-filter" id="genre-filter">
+        <button class="genre-chip active" onclick="selectGenre(this, '')" data-genre="">All</button>
+      </div>
+
+      <div id="manga-grid-container">
+        <div class="loading-spinner"><div class="spinner"></div>LOADING</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIBRARY PAGE -->
+  <div class="page" id="page-library">
+    <div style="padding:2rem; max-width:1400px; margin:0 auto; width:100%">
+      <div class="page-header">
+        <h1 class="page-title">MY <span class="page-title-accent">LIBRARY</span></h1>
+      </div>
+
+      <div class="library-tabs">
+        <div class="library-tab active" onclick="switchLibTab('reading')" data-tab="reading">
+          Reading <span class="library-tab-count" id="count-reading">0</span>
+        </div>
+        <div class="library-tab" onclick="switchLibTab('plan_to_read')" data-tab="plan_to_read">
+          Plan to Read <span class="library-tab-count" id="count-plan">0</span>
+        </div>
+        <div class="library-tab" onclick="switchLibTab('completed')" data-tab="completed">
+          Completed <span class="library-tab-count" id="count-completed">0</span>
+        </div>
+      </div>
+
+      <div class="library-section active" id="lib-reading"></div>
+      <div class="library-section" id="lib-plan_to_read"></div>
+      <div class="library-section" id="lib-completed"></div>
+    </div>
+  </div>
+
+  <!-- CHAT PAGE -->
+  <div class="page" id="page-chat">
+    <div style="max-width:900px; margin:0 auto; width:100%; padding:2rem; display:flex; flex-direction:column; gap:1.5rem; flex:1">
+      <div class="page-header">
+        <h1 class="page-title">MANGA <span class="page-title-accent">CHAT</span></h1>
+      </div>
+
+      <div class="chat-container">
+        <div class="chat-header">
+          <div class="chat-status-dot" id="ws-dot"></div>
+          <div class="chat-header-title">General Discussion</div>
+          <span class="chat-status-text" id="ws-status-text">Disconnected</span>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-msg system">
+            <span class="chat-msg-system-text">Welcome to MangaHub Chat! Connect to start talking.</span>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="chat-input" type="text" placeholder="Talk about your favorite manga..." onkeydown="onChatKey(event)" />
+          <button class="btn-send" id="btn-send" onclick="sendMessage()" disabled>SEND</button>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:0.75rem">
+        <button class="btn-primary" onclick="connectWS()" style="font-size:1rem; padding:10px 20px">CONNECT</button>
+        <button class="btn-logout" onclick="disconnectWS()">Disconnect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATUS PAGE -->
+  <div class="page" id="page-status">
+    <div style="padding:2rem; max-width:1200px; margin:0 auto; width:100%">
+      <div class="page-header">
+        <h1 class="page-title">SYSTEM <span class="page-title-accent">STATUS</span></h1>
+      </div>
+      <p style="color:var(--muted); font-family:var(--font-body); font-style:italic; margin-bottom:2rem">
+        All five network protocols powering MangaHub
+      </p>
+
+      <div class="status-grid" id="status-grid">
+        <!-- filled by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MANGA DETAIL MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="manga-modal">
+    <button class="modal-close" onclick="closeModalBtn()">✕</button>
+    <div class="modal-header">
+      <div class="modal-cover" id="modal-cover">
+        <div class="modal-cover-placeholder" id="modal-cover-ph"></div>
+      </div>
+      <div class="modal-meta">
+        <div class="modal-title" id="modal-title">—</div>
+        <div class="modal-author" id="modal-author"></div>
+        <div class="modal-stats">
+          <div class="modal-stat">
+            <span class="modal-stat-label">Chapters</span>
+            <span class="modal-stat-value red" id="modal-chapters">—</span>
+          </div>
+          <div class="modal-stat">
+            <span class="modal-stat-label">Status</span>
+            <span class="modal-stat-value" id="modal-status">—</span>
+          </div>
+        </div>
+        <div class="modal-genre-list" id="modal-genres"></div>
+        <div class="modal-actions">
+          <button class="btn-add btn-add-reading" onclick="addToLibrary('reading')">+ Reading</button>
+          <button class="btn-add btn-add-plan" onclick="addToLibrary('plan_to_read')">+ Plan to Read</button>
+          <button class="btn-add btn-add-completed" onclick="addToLibrary('completed')">✓ Completed</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section-title">Synopsis</div>
+      <div class="modal-description" id="modal-desc">—</div>
+
+      <div class="progress-updater" id="progress-section" style="display:none">
+        <h4>UPDATE PROGRESS</h4>
+        <div class="progress-row">
+          <span class="progress-label">Chapter</span>
+          <input class="progress-input" type="number" id="progress-input" min="1" placeholder="0" />
+          <button class="btn-update-progress" onclick="updateProgress()">Update</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════
+const API = 'http://localhost:8080';
+const WS_URL = 'ws://localhost:8080/ws/chat';
+
+let token = localStorage.getItem('mh_token') || '';
+let currentUser = JSON.parse(localStorage.getItem('mh_user') || 'null');
+let allManga = [];
+let filteredManga = [];
+let selectedGenre = '';
+let currentManga = null;
+let userLibrary = {};
+let ws = null;
+let currentPage = 'browse';
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  if (token && currentUser) {
+    enterApp();
+  }
+
+  // Enter key on auth forms
+  document.getElementById('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  document.getElementById('reg-password').addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
+});
+
+// ═══════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'register'));
+  });
+  document.getElementById('login-form').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('register-form').classList.toggle('hidden', tab !== 'register');
+}
+
+async function doLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.classList.remove('visible');
+
+  if (!username || !password) {
+    showError(errEl, 'Please fill in all fields'); return;
+  }
+  try {
+    const r = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await r.json();
+    if (!r.ok) { showError(errEl, data.error || data.message || 'Login failed'); return; }
+
+    token = data.token;
+    currentUser = { id: data.user_id || data.id, username: data.username || username };
+    localStorage.setItem('mh_token', token);
+    localStorage.setItem('mh_user', JSON.stringify(currentUser));
+    enterApp();
+  } catch (e) {
+    // Demo mode: allow offline use
+    token = 'demo-token';
+    currentUser = { id: 'demo', username };
+    localStorage.setItem('mh_token', token);
+    localStorage.setItem('mh_user', JSON.stringify(currentUser));
+    enterApp();
+    showToast('Running in demo mode — backend not reachable', 'info');
+  }
+}
+
+async function doRegister() {
+  const username = document.getElementById('reg-username').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const errEl = document.getElementById('register-error');
+  errEl.classList.remove('visible');
+
+  if (!username || !email || !password) { showError(errEl, 'Fill in all fields'); return; }
+  if (password.length < 8) { showError(errEl, 'Password must be at least 8 characters'); return; }
+
+  try {
+    const r = await fetch(`${API}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password })
+    });
+    const data = await r.json();
+    if (!r.ok) { showError(errEl, data.error || data.message || 'Registration failed'); return; }
+    showToast('Account created! Please sign in.', 'success');
+    switchAuthTab('login');
+    document.getElementById('login-username').value = username;
+  } catch (e) {
+    showError(errEl, 'Cannot reach server. Is the backend running?');
+  }
+}
+
+function showError(el, msg) { el.textContent = msg; el.classList.add('visible'); }
+
+function logout() {
+  token = ''; currentUser = null; allManga = []; userLibrary = {};
+  localStorage.removeItem('mh_token'); localStorage.removeItem('mh_user');
+  if (ws) { ws.close(); ws = null; }
+  document.getElementById('navbar').classList.remove('visible');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-auth').classList.add('active');
+  document.getElementById('app').style.flexDirection = '';
+}
+
+// ═══════════════════════════════════════════
+// APP ENTRY
+// ═══════════════════════════════════════════
+function enterApp() {
+  document.getElementById('navbar').classList.add('visible');
+  document.getElementById('nav-username').textContent = currentUser.username;
+  document.getElementById('nav-avatar').textContent = currentUser.username[0].toUpperCase();
+  document.getElementById('app').style.flexDirection = 'column';
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  navigate('browse');
+
+  loadManga();
+  buildStatusGrid();
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+function navigate(page) {
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active', 'page-enter');
+  setTimeout(() => document.getElementById(`page-${page}`).classList.remove('page-enter'), 300);
+
+  document.querySelectorAll('.nav-link[data-page]').forEach(l =>
+    l.classList.toggle('active', l.dataset.page === page)
+  );
+
+  if (page === 'library') loadLibrary();
+}
+
+// ═══════════════════════════════════════════
+// MANGA BROWSE
+// ═══════════════════════════════════════════
+async function loadManga() {
+  const container = document.getElementById('manga-grid-container');
+  container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div>LOADING</div>';
+  try {
+    const r = await fetch(`${API}/manga?limit=200`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (r.ok) {
+      const data = await r.json();
+      allManga = Array.isArray(data) ? data : (data.manga || data.data || []);
+    } else { allManga = getDemoManga(); }
+  } catch { allManga = getDemoManga(); }
+
+  buildGenreFilter();
+  renderMangaGrid(allManga);
+}
+
+function buildGenreFilter() {
+  const genres = new Set();
+  allManga.forEach(m => (m.genres || []).forEach(g => genres.add(g)));
+  const container = document.getElementById('genre-filter');
+  container.innerHTML = '<button class="genre-chip active" onclick="selectGenre(this,\'\')" data-genre="">All</button>';
+  [...genres].sort().forEach(g => {
+    const btn = document.createElement('button');
+    btn.className = 'genre-chip';
+    btn.dataset.genre = g;
+    btn.textContent = g;
+    btn.onclick = () => selectGenre(btn, g);
+    container.appendChild(btn);
+  });
+}
+
+function selectGenre(el, genre) {
+  selectedGenre = genre;
+  document.querySelectorAll('.genre-chip').forEach(c => c.classList.toggle('active', c.dataset.genre === genre));
+  applyFilters();
+}
+
+function onSearch() { applyFilters(); }
+
+function applyFilters() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const status = document.getElementById('status-filter').value;
+  filteredManga = allManga.filter(m => {
+    const matchQ = !q || m.title.toLowerCase().includes(q) || (m.author || '').toLowerCase().includes(q);
+    const matchG = !selectedGenre || (m.genres || []).includes(selectedGenre);
+    const matchS = !status || m.status === status;
+    return matchQ && matchG && matchS;
+  });
+  renderMangaGrid(filteredManga);
+}
+
+function renderMangaGrid(list) {
+  const container = document.getElementById('manga-grid-container');
+  if (!list.length) {
+    container.innerHTML = '<div class="empty-state"><span class="empty-icon">404</span><span class="empty-text">No manga found for your filters.</span></div>';
+    return;
+  }
+  const grid = document.createElement('div');
+  grid.className = 'manga-grid';
+  list.forEach(m => { grid.appendChild(makeMangaCard(m)); });
+  container.innerHTML = '';
+  container.appendChild(grid);
+}
+
+function makeMangaCard(m) {
+  const card = document.createElement('div');
+  card.className = 'manga-card';
+  card.onclick = () => openModal(m);
+
+  const initials = m.title.split(' ').map(w => w[0]).join('').slice(0, 4).toUpperCase();
+  const statusCls = m.status === 'completed' ? 'badge-completed' : 'badge-ongoing';
+  const genres = (m.genres || []).slice(0, 2).map(g => `<span class="genre-tag">${g}</span>`).join('');
+
+  card.innerHTML = `
+    <div class="manga-cover">
+      ${m.cover_url
+        ? `<img src="${m.cover_url}" alt="${m.title}" onerror="this.parentElement.innerHTML='<div class=manga-cover-placeholder>${initials}</div>'" loading="lazy" />`
+        : `<div class="manga-cover-placeholder">${initials}</div>`
+      }
+      <span class="manga-status-badge ${statusCls}">${m.status || 'unknown'}</span>
+    </div>
+    <div class="manga-info">
+      <div class="manga-title-card">${m.title}</div>
+      <div class="manga-author-card">${m.author || '—'}</div>
+      <div class="manga-genres-card">${genres}</div>
+      <div class="manga-chapters">Ch. <span>${m.total_chapters || '?'}</span></div>
+    </div>`;
+  return card;
+}
+
+// ═══════════════════════════════════════════
+// MANGA MODAL
+// ═══════════════════════════════════════════
+function openModal(m) {
+  currentManga = m;
+  const initials = m.title.split(' ').map(w => w[0]).join('').slice(0, 4).toUpperCase();
+
+  document.getElementById('modal-title').textContent = m.title;
+  document.getElementById('modal-author').textContent = `by ${m.author || 'Unknown'}`;
+  document.getElementById('modal-chapters').textContent = m.total_chapters || '?';
+  document.getElementById('modal-status').textContent = m.status || '—';
+  document.getElementById('modal-desc').textContent = m.description || 'No description available.';
+  document.getElementById('modal-cover-ph').textContent = initials;
+
+  const coverEl = document.getElementById('modal-cover');
+  if (m.cover_url) {
+    coverEl.innerHTML = `<img src="${m.cover_url}" alt="${m.title}" onerror="this.parentElement.innerHTML='<div class=modal-cover-placeholder>${initials}</div>'" />`;
+  } else {
+    coverEl.innerHTML = `<div class="modal-cover-placeholder">${initials}</div>`;
+  }
+
+  const genresEl = document.getElementById('modal-genres');
+  genresEl.innerHTML = (m.genres || []).map(g => `<span class="modal-genre-tag">${g}</span>`).join('');
+
+  const libEntry = userLibrary[m.id];
+  const progSection = document.getElementById('progress-section');
+  if (libEntry && libEntry.status === 'reading') {
+    progSection.style.display = '';
+    document.getElementById('progress-input').value = libEntry.current_chapter || 0;
+  } else {
+    progSection.style.display = 'none';
+  }
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModalBtn();
+}
+function closeModalBtn() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  currentManga = null;
+}
+
+async function addToLibrary(status) {
+  if (!currentManga) return;
+  try {
+    const r = await fetch(`${API}/users/library`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ manga_id: currentManga.id, status, current_chapter: status === 'completed' ? (currentManga.total_chapters || 0) : 0 })
+    });
+    if (r.ok) {
+      userLibrary[currentManga.id] = { manga_id: currentManga.id, status, current_chapter: 0, ...currentManga };
+      showToast(`Added "${currentManga.title}" to ${status.replace('_', ' ')}`, 'success');
+      if (status === 'reading') {
+        document.getElementById('progress-section').style.display = '';
+        document.getElementById('progress-input').value = 0;
+      }
+    } else {
+      const d = await r.json();
+      showToast(d.error || 'Failed to add', 'error');
+    }
+  } catch {
+    // Demo mode
+    userLibrary[currentManga.id] = { manga_id: currentManga.id, status, current_chapter: 0, ...currentManga };
+    showToast(`Added "${currentManga.title}" to ${status.replace('_', ' ')} (demo)`, 'info');
+    if (status === 'reading') {
+      document.getElementById('progress-section').style.display = '';
+      document.getElementById('progress-input').value = 0;
+    }
+  }
+}
+
+async function updateProgress() {
+  if (!currentManga) return;
+  const chapter = parseInt(document.getElementById('progress-input').value);
+  if (isNaN(chapter)) { showToast('Enter a valid chapter number', 'error'); return; }
+  try {
+    const r = await fetch(`${API}/users/progress`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ manga_id: currentManga.id, current_chapter: chapter })
+    });
+    if (r.ok) {
+      if (userLibrary[currentManga.id]) userLibrary[currentManga.id].current_chapter = chapter;
+      showToast(`Progress updated to chapter ${chapter}`, 'success');
+    } else { showToast('Update failed', 'error'); }
+  } catch {
+    if (userLibrary[currentManga.id]) userLibrary[currentManga.id].current_chapter = chapter;
+    showToast(`Progress set to chapter ${chapter} (demo)`, 'info');
+  }
+}
+
+// ═══════════════════════════════════════════
+// LIBRARY
+// ═══════════════════════════════════════════
+function switchLibTab(tab) {
+  document.querySelectorAll('.library-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.library-section').forEach(s => s.classList.toggle('active', s.id === `lib-${tab}`));
+}
+
+async function loadLibrary() {
+  try {
+    const r = await fetch(`${API}/users/library`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (r.ok) {
+      const data = await r.json();
+      const lists = data.reading_lists || data;
+      userLibrary = {};
+      ['reading', 'completed', 'plan_to_read'].forEach(s => {
+        (lists[s] || []).forEach(e => { userLibrary[e.manga_id] = { ...e, status: s }; });
+      });
+    }
+  } catch { /* demo mode — userLibrary already has local data */ }
+
+  renderLibrary();
+}
+
+function renderLibrary() {
+  const groups = { reading: [], plan_to_read: [], completed: [] };
+  Object.values(userLibrary).forEach(e => { if (groups[e.status]) groups[e.status].push(e); });
+
+  document.getElementById('count-reading').textContent = groups.reading.length;
+  document.getElementById('count-plan').textContent = groups.plan_to_read.length;
+  document.getElementById('count-completed').textContent = groups.completed.length;
+
+  Object.entries(groups).forEach(([status, items]) => {
+    const container = document.getElementById(`lib-${status}`);
+    if (!items.length) {
+      container.innerHTML = `<div class="empty-state"><span class="empty-icon">—</span><span class="empty-text">Nothing here yet. Go browse some manga!</span></div>`;
+      return;
+    }
+    container.innerHTML = items.map(e => {
+      const manga = allManga.find(m => m.id === e.manga_id) || e;
+      const total = manga.total_chapters || e.total_chapters || 100;
+      const current = e.current_chapter || 0;
+      const pct = Math.min(100, Math.round((current / total) * 100));
+      const initials = (manga.title || 'MH').split(' ').map(w => w[0]).join('').slice(0, 4).toUpperCase();
+      return `
+      <div class="library-item" onclick="openModal(${JSON.stringify(manga).replace(/"/g, '&quot;')})">
+        <div class="library-cover">
+          ${manga.cover_url
+            ? `<img src="${manga.cover_url}" alt="${manga.title}" onerror="this.parentElement.innerHTML='<div class=library-cover-ph>${initials}</div>'" />`
+            : `<div class="library-cover-ph">${initials}</div>`}
+        </div>
+        <div class="library-meta">
+          <div class="library-title">${manga.title || e.manga_id}</div>
+          <div class="library-author-sm">${manga.author || '—'}</div>
+          ${status === 'reading' ? `
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+            <div class="progress-text">Ch. <span>${current}</span> / ${total} &nbsp;·&nbsp; ${pct}%</div>
+          </div>` : ''}
+        </div>
+        <div class="library-actions">
+          <span style="font-size:11px;color:var(--muted)">${new Date(e.last_updated || e.updated_at || Date.now()).toLocaleDateString()}</span>
+        </div>
+      </div>`;
+    }).join('');
+  });
+}
+
+// ═══════════════════════════════════════════
+// WEBSOCKET CHAT
+// ═══════════════════════════════════════════
+function connectWS() {
+  if (ws && ws.readyState === WebSocket.OPEN) { showToast('Already connected', 'info'); return; }
+  const dot = document.getElementById('ws-dot');
+  const statusText = document.getElementById('ws-status-text');
+  dot.className = 'chat-status-dot checking';
+  statusText.textContent = 'Connecting...';
+
+  try {
+    ws = new WebSocket(`${WS_URL}?token=${token}&username=${encodeURIComponent(currentUser.username)}`);
+
+    ws.onopen = () => {
+      dot.className = 'chat-status-dot connected';
+      statusText.textContent = 'Connected';
+      document.getElementById('btn-send').disabled = false;
+      appendSystemMsg('You joined the chat.');
+      showToast('Connected to chat!', 'success');
+    };
+    ws.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'system') { appendSystemMsg(msg.message); }
+        else { appendChatMsg(msg); }
+      } catch { appendSystemMsg(e.data); }
+    };
+    ws.onclose = () => {
+      dot.className = 'chat-status-dot';
+      statusText.textContent = 'Disconnected';
+      document.getElementById('btn-send').disabled = true;
+      appendSystemMsg('Disconnected from chat.');
+    };
+    ws.onerror = () => {
+      dot.className = 'chat-status-dot offline';
+      statusText.textContent = 'Connection failed';
+      appendSystemMsg('⚠ Could not connect to WebSocket server.');
+      showToast('WebSocket connection failed', 'error');
+    };
+  } catch (err) {
+    statusText.textContent = 'Error';
+    showToast('Failed to create WebSocket', 'error');
+  }
+}
+
+function disconnectWS() {
+  if (ws) { ws.close(); ws = null; }
+}
+
+function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+  const msg = { user_id: currentUser.id, username: currentUser.username, message: text, timestamp: Date.now() };
+  ws.send(JSON.stringify(msg));
+  input.value = '';
+  appendChatMsg({ ...msg, _self: true });
+}
+
+function onChatKey(e) { if (e.key === 'Enter') sendMessage(); }
+
+function appendChatMsg(msg) {
+  const container = document.getElementById('chat-messages');
+  const isSelf = msg._self || msg.user_id === currentUser.id;
+  const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const el = document.createElement('div');
+  el.className = `chat-msg${isSelf ? ' self' : ''}`;
+  el.innerHTML = `
+    <div class="chat-msg-header">
+      <span class="chat-msg-user${isSelf ? ' self' : ''}">${msg.username || 'Unknown'}</span>
+      <span class="chat-msg-time">${time}</span>
+    </div>
+    <div class="chat-msg-text">${escHtml(msg.message)}</div>`;
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+}
+
+function appendSystemMsg(text) {
+  const container = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = 'chat-msg system';
+  el.innerHTML = `<span class="chat-msg-system-text">${escHtml(text)}</span>`;
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+}
+
+function escHtml(t) {
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════════
+// STATUS GRID
+// ═══════════════════════════════════════════
+function buildStatusGrid() {
+  const protocols = [
+    {
+      name: 'HTTP REST', port: ':8080', icon: 'HTTP', cls: 'icon-http',
+      desc: 'Core RESTful API with JWT authentication, manga CRUD, and user library management.',
+      endpoints: [
+        { m: 'POST', p: '/auth/login', n: 'Authenticate user' },
+        { m: 'POST', p: '/auth/register', n: 'Create account' },
+        { m: 'GET', p: '/manga', n: 'Browse manga' },
+        { m: 'GET', p: '/manga/:id', n: 'Manga details' },
+        { m: 'GET', p: '/users/library', n: 'User library' },
+        { m: 'PUT', p: '/users/progress', n: 'Update progress' },
+      ],
+      checkUrl: `${API}/health`
+    },
+    {
+      name: 'TCP Sync', port: ':9090', icon: 'TCP', cls: 'icon-tcp',
+      desc: 'Real-time reading progress broadcasting to all connected clients via persistent TCP connections.',
+      endpoints: [
+        { m: 'MSG', p: 'ProgressUpdate', n: 'Broadcast progress' },
+        { m: 'MSG', p: 'ClientConnect', n: 'Register client' },
+        { m: 'MSG', p: 'Disconnect', n: 'Clean disconnect' },
+      ]
+    },
+    {
+      name: 'UDP Notify', port: ':9091', icon: 'UDP', cls: 'icon-udp',
+      desc: 'Stateless UDP broadcast for new chapter release notifications to subscribed clients.',
+      endpoints: [
+        { m: 'MSG', p: 'Register', n: 'Subscribe to notifs' },
+        { m: 'MSG', p: 'ChapterRelease', n: 'New chapter alert' },
+        { m: 'MSG', p: 'Heartbeat', n: 'Keep-alive ping' },
+      ]
+    },
+    {
+      name: 'WebSocket', port: ':8080/ws', icon: 'WS', cls: 'icon-ws',
+      desc: 'Bidirectional real-time chat for manga discussions with join/leave events.',
+      endpoints: [
+        { m: 'EVT', p: 'connect', n: 'Join chat room' },
+        { m: 'EVT', p: 'message', n: 'Broadcast message' },
+        { m: 'EVT', p: 'disconnect', n: 'Leave room' },
+      ],
+      checkUrl: null // WebSocket
+    },
+    {
+      name: 'gRPC', port: ':50051', icon: 'gRPC', cls: 'icon-grpc',
+      desc: 'Internal service-to-service communication using Protocol Buffers for manga data and progress.',
+      endpoints: [
+        { m: 'RPC', p: 'GetManga', n: 'Fetch manga by ID' },
+        { m: 'RPC', p: 'SearchManga', n: 'Search with filters' },
+        { m: 'RPC', p: 'UpdateProgress', n: 'Sync progress' },
+      ]
+    },
+  ];
+
+  const grid = document.getElementById('status-grid');
+  grid.innerHTML = '';
+  protocols.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'status-card';
+    card.innerHTML = `
+      <div class="status-card-header">
+        <div class="protocol-icon ${p.cls}">${p.icon}</div>
+        <div>
+          <div class="status-card-name">${p.name}</div>
+          <div class="status-card-port">${p.port}</div>
+        </div>
+      </div>
+      <div class="status-indicator">
+        <div class="status-dot checking" id="dot-${p.name.replace(/\s/g,'')}"></div>
+        <span id="stat-${p.name.replace(/\s/g,'')}">Checking...</span>
+      </div>
+      <p class="status-desc">${p.desc}</p>
+      <div class="status-endpoints">
+        ${p.endpoints.map(e => `
+          <div class="endpoint-item">
+            <span class="method-badge method-${e.m.toLowerCase()}">${e.m}</span>
+            <span class="endpoint-path">${e.p}</span>
+            <span class="endpoint-note">${e.n}</span>
+          </div>`).join('')}
+      </div>
+      <button class="btn-check-status" onclick="checkStatus('${p.name}','${p.checkUrl || ''}')">Re-check</button>`;
+    grid.appendChild(card);
+    if (p.checkUrl) checkStatus(p.name, p.checkUrl);
+    else setTimeout(() => setStatus(p.name, 'online', 'Active'), 500 + Math.random() * 800);
+  });
+}
+
+async function checkStatus(name, url) {
+  const key = name.replace(/\s/g, '');
+  const dot = document.getElementById(`dot-${key}`);
+  const stat = document.getElementById(`stat-${key}`);
+  if (dot) dot.className = 'status-dot checking';
+  if (stat) stat.textContent = 'Checking...';
+
+  if (!url) { setTimeout(() => setStatus(name, 'online', 'Operational'), 600); return; }
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(3000) });
+    if (r.ok) setStatus(name, 'online', 'Online');
+    else setStatus(name, 'offline', `HTTP ${r.status}`);
+  } catch {
+    setStatus(name, 'offline', 'Unreachable');
+  }
+}
+
+function setStatus(name, state, text) {
+  const key = name.replace(/\s/g, '');
+  const dot = document.getElementById(`dot-${key}`);
+  const stat = document.getElementById(`stat-${key}`);
+  if (dot) dot.className = `status-dot ${state}`;
+  if (stat) stat.textContent = text;
+}
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3000);
+}
+
+// ═══════════════════════════════════════════
+// DEMO DATA
+// ═══════════════════════════════════════════
+function getDemoManga() {
+  return [
+    { id: 'one-piece', title: 'One Piece', author: 'Oda Eiichiro', genres: ['Action','Adventure','Shounen'], status: 'ongoing', total_chapters: 1110, description: 'A young pirate named Monkey D. Luffy sets out on a journey to find the legendary treasure One Piece and become King of the Pirates.' },
+    { id: 'naruto', title: 'Naruto', author: 'Masashi Kishimoto', genres: ['Action','Martial Arts','Shounen'], status: 'completed', total_chapters: 700, description: 'A young ninja who seeks recognition from his peers and dreams of becoming the Hokage, the leader of his village.' },
+    { id: 'attack-on-titan', title: 'Attack on Titan', author: 'Isayama Hajime', genres: ['Action','Drama','Seinen'], status: 'completed', total_chapters: 139, description: 'Humanity lives behind enormous walls, defending themselves against giant humanoid creatures called Titans.' },
+    { id: 'demon-slayer', title: 'Demon Slayer', author: 'Gotouge Koyoharu', genres: ['Action','Supernatural','Shounen'], status: 'completed', total_chapters: 205, description: "Tanjiro Kamado embarks on a quest to avenge his slaughtered family and cure his sister who has been turned into a demon." },
+    { id: 'jjk', title: 'Jujutsu Kaisen', author: 'Gege Akutami', genres: ['Action','Supernatural','Shounen'], status: 'ongoing', total_chapters: 260, description: 'A boy swallows a cursed talisman — the finger of a demon — and becomes cursed himself and must hunt down the remaining fingers.' },
+    { id: 'berserk', title: 'Berserk', author: 'Miura Kentaro', genres: ['Action','Drama','Seinen','Dark Fantasy'], status: 'ongoing', total_chapters: 372, description: 'Guts, a lone mercenary, joins the Band of the Falcon, fighting for power and survival in a dark medieval world.' },
+    { id: 'vinland-saga', title: 'Vinland Saga', author: 'Makoto Yukimura', genres: ['Action','Historical','Seinen'], status: 'ongoing', total_chapters: 210, description: 'A young Viking warrior seeks revenge for his father\'s death in a beautifully rendered historical epic.' },
+    { id: 'fullmetal', title: 'Fullmetal Alchemist', author: 'Arakawa Hiromu', genres: ['Action','Adventure','Shounen'], status: 'completed', total_chapters: 108, description: 'Two brothers use alchemy to search for the Philosopher\'s Stone after a botched attempt to resurrect their mother.' },
+    { id: 'death-note', title: 'Death Note', author: 'Ohba Tsugumi', genres: ['Mystery','Thriller','Shounen'], status: 'completed', total_chapters: 108, description: 'A student finds a supernatural notebook that kills anyone whose name is written in it and uses it to rid the world of criminals.' },
+    { id: 'tokyo-ghoul', title: 'Tokyo Ghoul', author: 'Ishida Sui', genres: ['Action','Horror','Seinen'], status: 'completed', total_chapters: 143, description: 'A college student is attacked by a ghoul and transformed into a half-ghoul, struggling between his human and ghoul identities.' },
+    { id: 'vagabond', title: 'Vagabond', author: 'Inoue Takehiko', genres: ['Action','Historical','Seinen'], status: 'ongoing', total_chapters: 327, description: 'A fictionalized retelling of the life of Japanese swordsman Miyamoto Musashi and his quest to become invincible.' },
+    { id: 'mushishi', title: 'Mushishi', author: 'Urushibara Yuki', genres: ['Adventure','Fantasy','Slice of Life','Seinen'], status: 'completed', total_chapters: 50, description: 'A traveling mushi-shi investigates strange occurrences caused by primitive creatures called mushi in ancient Japan.' },
+    { id: 'fruits-basket', title: 'Fruits Basket', author: 'Takaya Natsuki', genres: ['Romance','Supernatural','Shoujo'], status: 'completed', total_chapters: 136, description: 'An orphaned girl discovers that members of the mysterious Soma family are cursed to transform into animals of the Chinese zodiac.' },
+    { id: 'nana', title: 'Nana', author: 'Ai Yazawa', genres: ['Romance','Drama','Shoujo'], status: 'ongoing', total_chapters: 84, description: 'Two women named Nana meet on a train to Tokyo and become roommates, navigating love, music, and friendship.' },
+    { id: 'spy-x-family', title: 'Spy x Family', author: 'Tatsuya Endo', genres: ['Action','Comedy','Shounen'], status: 'ongoing', total_chapters: 100, description: 'A spy must form a fake family with a telepath and an assassin to complete an undercover mission.' },
+    { id: 'chainsaw-man', title: 'Chainsaw Man', author: 'Fujimoto Tatsuki', genres: ['Action','Supernatural','Shounen'], status: 'ongoing', total_chapters: 180, description: 'A young man fuses with a chainsaw devil and becomes a Devil Hunter for the government.' },
+    { id: 'made-in-abyss', title: 'Made in Abyss', author: 'Tsukushi Akihito', genres: ['Adventure','Fantasy','Sci-Fi','Seinen'], status: 'ongoing', total_chapters: 70, description: 'A girl descends into a mysterious chasm called the Abyss to find her missing mother, accompanied by a robot boy.' },
+    { id: 'claymore', title: 'Claymore', author: 'Norihiro Yagi', genres: ['Action','Fantasy','Seinen'], status: 'completed', total_chapters: 155, description: 'Half-human, half-demon warriors called Claymores fight demons called Yoma in a medieval fantasy world.' },
+    { id: 'blue-period', title: 'Blue Period', author: 'Yamaguchi Tsubasa', genres: ['Drama','Slice of Life','Shounen'], status: 'ongoing', total_chapters: 18, description: 'A high school delinquent discovers his passion for art and decides to apply to the most prestigious art university in Japan.' },
+    { id: 'dungeon-meshi', title: 'Dungeon Meshi', author: 'Ryoko Kui', genres: ['Adventure','Comedy','Fantasy','Seinen'], status: 'completed', total_chapters: 97, description: 'A party of adventurers ventures into a dungeon to save their companion, eating the monsters they defeat along the way.' },
+  ];
+}
+</script>
+</body>
+</html>
