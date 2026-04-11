@@ -1,10 +1,14 @@
 # Stage 1: Build
-FROM golang:1.22-alpine AS builder
+# Cập nhật đúng phiên bản Go 1.25.0 theo file go.mod của bạn
+FROM golang:1.25.0-alpine AS builder
 
 # Bắt buộc phải cài gcc và musl-dev để biên dịch được go-sqlite3 (CGO_ENABLED=1)
 RUN apk add --no-cache gcc musl-dev
 
 WORKDIR /app
+
+# Thêm nguồn tải dự phòng để tránh lỗi mạng kết nối khi tải thư viện
+ENV GOPROXY=https://goproxy.io,direct
 
 # Cache module Go
 COPY go.mod go.sum ./
