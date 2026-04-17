@@ -71,4 +71,4 @@
     - Sticky sidebar with scrollspy for all 5 protocol sections
     - Collapsible endpoint cards with request/response schemas and parameter tables
     - Syntax-highlighted code blocks with copy buttons
-    - gRPC proto definitions and grpcurl test commands
+    
