@@ -58,6 +58,18 @@ func main() {
 	r := gin.Default()
 	r.Use(corsMiddleware())
 
+	// ── Static Frontend ───────────────────────────────────────────────────────
+	// Serve the Week 9 frontend from the adjacent Frontend/ directory.
+	// Accessing http://localhost:8080/ will load index.html (login page).
+	frontendPath := getEnv("FRONTEND_PATH", "../Frontend")
+	r.StaticFile("/", frontendPath+"/index.html")
+	r.StaticFile("/index.html", frontendPath+"/index.html")
+	r.StaticFile("/home.html", frontendPath+"/home.html")
+	r.StaticFile("/manga.html", frontendPath+"/manga.html")
+	r.StaticFile("/library.html", frontendPath+"/library.html")
+	r.Static("/css", frontendPath+"/css")
+	r.Static("/js", frontendPath+"/js")
+
 	// ── Public / system routes ────────────────────────────────────────────────
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -122,6 +134,7 @@ func main() {
 	go func() {
 		log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 		log.Println("🚀  MangaHub API Server  →  http://localhost:8080")
+		log.Println("🌐  Frontend             →  http://localhost:8080/")
 		log.Println("❤️   Health Check        →  http://localhost:8080/health")
 		log.Println("💬  WebSocket Chat       →  ws://localhost:8080/ws/chat/:room_id?token=<jwt>")
 		log.Println("📡  TCP Sync Server      →  localhost:9090")

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MangaHub — My Library</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- ── Sidebar ─────────────────────────────────────── -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">📚</div>
+        <div class="logo-text">Manga<span>Hub</span></div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-label">Browse</div>
+          <a href="home.html" class="nav-link">
+            <span class="nav-icon">🏠</span> Discover
+          </a>
+          <a href="library.html" class="nav-link active">
+            <span class="nav-icon">📚</span> My Library
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-pill">
+          <div class="user-avatar" id="sidebar-avatar">?</div>
+          <div class="user-info">
+            <div class="user-name" id="sidebar-username">Loading…</div>
+            <div class="user-role">Reader</div>
+          </div>
+          <button class="btn-logout" id="btn-logout" title="Sign out">🚪</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── Main Content ────────────────────────────────── -->
+    <main class="main-content">
+      <header class="page-header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="btn btn-ghost btn-sm" id="btn-menu" style="display:none">☰</button>
+          <h1 class="page-title">My Library</h1>
+        </div>
+        <a href="home.html" class="btn btn-primary btn-sm">+ Discover More</a>
+      </header>
+
+      <div class="page-body">
+        <!-- Stats Summary -->
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px">
+          <div class="card" style="padding:16px 22px;flex:1;min-width:110px;text-align:center">
+            <div style="font-size:1.8rem;font-weight:700;font-family:'Rajdhani',sans-serif;color:var(--text-primary)" id="stat-total">0</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">Total</div>
+          </div>
+          <div class="card" style="padding:16px 22px;flex:1;min-width:110px;text-align:center">
+            <div style="font-size:1.8rem;font-weight:700;font-family:'Rajdhani',sans-serif;color:var(--blue)" id="stat-reading">0</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">Reading</div>
+          </div>
+          <div class="card" style="padding:16px 22px;flex:1;min-width:110px;text-align:center">
+            <div style="font-size:1.8rem;font-weight:700;font-family:'Rajdhani',sans-serif;color:#22c55e" id="stat-done">0</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">Completed</div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="library-tabs" id="library-tabs">
+          <!-- rendered by JS -->
+        </div>
+
+        <!-- List -->
+        <div class="library-list" id="library-list">
+          <div class="loading-spinner"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initLibrary } from './js/library.js';
+    import { logout } from './js/auth.js';
+
+    initLibrary();
+
+    document.getElementById('btn-logout')?.addEventListener('click', logout);
+
+    const menuBtn = document.getElementById('btn-menu');
+    menuBtn.style.display = window.innerWidth < 900 ? 'flex' : 'none';
+    window.addEventListener('resize', () => {
+      menuBtn.style.display = window.innerWidth < 900 ? 'flex' : 'none';
+    });
+  </script>
+</body>
+</html>

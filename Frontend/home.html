@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MangaHub — Discover</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- ── Sidebar ─────────────────────────────────────── -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">📚</div>
+        <div class="logo-text">Manga<span>Hub</span></div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-label">Browse</div>
+          <a href="home.html" class="nav-link active">
+            <span class="nav-icon">🏠</span> Discover
+          </a>
+          <a href="library.html" class="nav-link">
+            <span class="nav-icon">📚</span> My Library
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-label">System</div>
+          <a href="#" class="nav-link" id="health-link">
+            <span class="nav-icon">❤️</span> Health Check
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-pill">
+          <div class="user-avatar" id="sidebar-avatar">?</div>
+          <div class="user-info">
+            <div class="user-name" id="sidebar-username">Loading…</div>
+            <div class="user-role">Reader</div>
+          </div>
+          <button class="btn-logout" id="btn-logout" title="Sign out">🚪</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── Main Content ────────────────────────────────── -->
+    <main class="main-content">
+      <!-- Header -->
+      <header class="page-header">
+        <div style="display:flex;align-items:center;gap:14px">
+          <button class="btn btn-ghost btn-sm" id="btn-menu" style="display:none">☰</button>
+          <div>
+            <h1 class="page-title" style="font-size:1.3rem">Discover Manga</h1>
+            <div style="font-size:0.78rem;color:var(--text-muted)" id="manga-count">Loading…</div>
+          </div>
+        </div>
+
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            class="search-input"
+            id="search-input"
+            placeholder="Search by title or author…"
+          />
+        </div>
+      </header>
+
+      <!-- Body -->
+      <div class="page-body">
+        <!-- Continue Reading -->
+        <section id="continue-section" style="display:none;margin-bottom:32px">
+          <div class="section-header">
+            <div class="section-title">Continue Reading</div>
+          </div>
+          <div class="manga-grid" id="continue-grid"></div>
+        </section>
+
+        <!-- Genre Filters -->
+        <div style="margin-bottom:20px">
+          <div class="filter-tabs" id="genre-tabs">
+            <!-- rendered by JS -->
+          </div>
+        </div>
+
+        <!-- All Manga Grid -->
+        <section>
+          <div class="section-header">
+            <div class="section-title">All Manga</div>
+          </div>
+          <div class="manga-grid" id="manga-grid">
+            <div class="loading-spinner" style="grid-column:1/-1"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Health modal -->
+  <div id="health-modal" class="modal-overlay" style="display:none">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">System Health</h3>
+        <button class="modal-close" id="health-modal-close">✕</button>
+      </div>
+      <div class="modal-body" id="health-modal-body">
+        <div class="loading-spinner"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initHome } from './js/home.js';
+    import { apiHealth, showToast } from './js/api.js';
+    import { logout } from './js/auth.js';
+
+    initHome();
+
+    // Health check link
+    document.getElementById('health-link')?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const modal = document.getElementById('health-modal');
+      const body  = document.getElementById('health-modal-body');
+      modal.style.display = 'flex';
+
+      try {
+        const data = await apiHealth();
+        body.innerHTML = `
+          <div style="display:flex;flex-direction:column;gap:10px">
+            ${Object.entries(data).map(([k, v]) => `
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg-card);border-radius:var(--radius-md);border:1px solid var(--border)">
+                <span style="font-weight:600;font-family:'Rajdhani',sans-serif">${k}</span>
+                <span class="stat-chip ${v === 'ok' || v === true ? 'green' : 'orange'}">${v}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } catch (err) {
+        body.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">${err.message}</div></div>`;
+      }
+    });
+
+    document.getElementById('health-modal-close')?.addEventListener('click', () => {
+      document.getElementById('health-modal').style.display = 'none';
+    });
+
+    // Mobile menu
+    document.getElementById('btn-menu').style.display = window.innerWidth < 900 ? 'flex' : 'none';
+    window.addEventListener('resize', () => {
+      document.getElementById('btn-menu').style.display = window.innerWidth < 900 ? 'flex' : 'none';
+    });
+  </script>
+</body>
+</html>

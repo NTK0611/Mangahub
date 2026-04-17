@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manga Detail — MangaHub</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- ── Sidebar ─────────────────────────────────────── -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">📚</div>
+        <div class="logo-text">Manga<span>Hub</span></div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-label">Browse</div>
+          <a href="home.html" class="nav-link">
+            <span class="nav-icon">🏠</span> Discover
+          </a>
+          <a href="library.html" class="nav-link">
+            <span class="nav-icon">📚</span> My Library
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-pill">
+          <div class="user-avatar" id="sidebar-avatar">?</div>
+          <div class="user-info">
+            <div class="user-name" id="sidebar-username">Loading…</div>
+            <div class="user-role">Reader</div>
+          </div>
+          <button class="btn-logout" id="btn-logout" title="Sign out">🚪</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── Main Content ────────────────────────────────── -->
+    <main class="main-content">
+      <header class="page-header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <a href="home.html" class="btn btn-ghost btn-sm">← Back</a>
+          <h1 class="page-title">Manga Detail</h1>
+        </div>
+        <a href="library.html" class="btn btn-secondary btn-sm">📚 My Library</a>
+      </header>
+
+      <div class="page-body">
+        <!-- Manga detail injected here -->
+        <div id="manga-detail">
+          <div class="loading-spinner"></div>
+        </div>
+
+        <!-- Two-column layout: info + chat -->
+        <div style="display:grid;grid-template-columns:1fr 380px;gap:24px;margin-top:4px" id="chat-column-wrap">
+          <div><!-- placeholder --></div>
+
+          <!-- Live Chat Panel -->
+          <div>
+            <div class="section-header" style="margin-bottom:12px">
+              <div class="section-title">Live Chat</div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <div class="ws-dot" id="ws-dot"></div>
+                <span style="font-size:0.75rem;color:var(--text-muted)" id="ws-status-label">Connecting…</span>
+              </div>
+            </div>
+
+            <div class="chat-panel">
+              <div class="chat-messages" id="chat-messages">
+                <div class="chat-msg system">
+                  <div class="chat-bubble">Connecting to chat room…</div>
+                </div>
+              </div>
+
+              <form class="chat-input-wrap" id="chat-form">
+                <input
+                  type="text"
+                  class="chat-input"
+                  id="chat-input"
+                  placeholder="Say something…"
+                  maxlength="500"
+                  autocomplete="off"
+                />
+                <button type="submit" class="chat-send-btn">Send</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ── Update Progress Modal ──────────────────────────────── -->
+  <div id="progress-modal" class="modal-overlay" style="display:none">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Update Progress</h3>
+        <button class="modal-close" id="pm-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Current Chapter</label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input type="number" class="form-input" id="pm-chapter" min="0" style="max-width:120px" />
+            <span style="color:var(--text-muted);font-size:0.85rem" id="pm-total"></span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-input form-select" id="pm-status">
+            <option value="reading">📖 Reading</option>
+            <option value="completed">✅ Completed</option>
+            <option value="on_hold">⏸ On Hold</option>
+            <option value="dropped">🗑 Dropped</option>
+            <option value="plan_to_read">🔖 Plan to Read</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="pm-cancel">Cancel</button>
+        <button class="btn btn-primary" id="pm-save">Save Progress</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initMangaDetail } from './js/manga.js';
+    import { apiUpdateProgress, showToast } from './js/api.js';
+    import { logout } from './js/auth.js';
+
+    initMangaDetail();
+
+    // Progress modal controls
+    const modal   = document.getElementById('progress-modal');
+    const closeEl = [document.getElementById('pm-close'), document.getElementById('pm-cancel')];
+    closeEl.forEach(el => el?.addEventListener('click', () => modal.style.display = 'none'));
+
+    modal?.addEventListener('click', (e) => {
+      if (e.target === modal) modal.style.display = 'none';
+    });
+
+    document.getElementById('pm-save')?.addEventListener('click', async () => {
+      const chapter = parseInt(document.getElementById('pm-chapter').value) || 0;
+      const status  = document.getElementById('pm-status').value;
+      const params  = new URLSearchParams(window.location.search);
+      const id      = params.get('id');
+      if (!id) return;
+
+      const btn = document.getElementById('pm-save');
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+
+      try {
+        await apiUpdateProgress(id, chapter, status);
+        showToast('Progress updated!', `Chapter ${chapter} · ${status}`, 'success');
+        modal.style.display = 'none';
+        // Reload page state
+        setTimeout(() => window.location.reload(), 800);
+      } catch (err) {
+        showToast('Error', err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save Progress';
+      }
+    });
+
+    // Sidebar logout
+    document.getElementById('btn-logout')?.addEventListener('click', logout);
+
+    // Reflow chat column below content on small screens
+    function reflowLayout() {
+      const wrap = document.getElementById('chat-column-wrap');
+      if (!wrap) return;
+      if (window.innerWidth < 1000) {
+        wrap.style.gridTemplateColumns = '1fr';
+      } else {
+        wrap.style.gridTemplateColumns = '1fr 380px';
+      }
+    }
+    reflowLayout();
+    window.addEventListener('resize', reflowLayout);
+  </script>
+</body>
+</html>

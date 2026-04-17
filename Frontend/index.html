@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<<<<<<< HEAD
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>MangaHub — Track Your Manga</title>
@@ -2016,5 +2017,106 @@ function getDemoManga() {
   ];
 }
 </script>
+=======
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MangaHub — Sign In</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-bg-glow"></div>
+    <div class="auth-bg-glow-2"></div>
+
+    <div class="auth-card">
+      <!-- Logo -->
+      <div class="auth-logo">
+        <div class="auth-logo-icon">📚</div>
+        <h1>Manga<span>Hub</span></h1>
+        <p>Your manga library, redefined.</p>
+      </div>
+
+      <!-- Tabs -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login">Sign In</button>
+        <button class="auth-tab" id="tab-register">Create Account</button>
+      </div>
+
+      <!-- Login Form -->
+      <form class="auth-form active" id="form-login" novalidate>
+        <div id="error-login" class="auth-error"></div>
+
+        <div class="form-group">
+          <label class="form-label" for="login-username">Username</label>
+          <input
+            class="form-input"
+            type="text"
+            id="login-username"
+            placeholder="Enter your username"
+            autocomplete="username"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="login-password">Password</label>
+          <input
+            class="form-input"
+            type="password"
+            id="login-password"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+          />
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg">Sign In</button>
+      </form>
+
+      <!-- Register Form -->
+      <form class="auth-form" id="form-register" novalidate>
+        <div id="error-register" class="auth-error"></div>
+
+        <div class="form-group">
+          <label class="form-label" for="reg-username">Username</label>
+          <input
+            class="form-input"
+            type="text"
+            id="reg-username"
+            placeholder="Choose a username"
+            autocomplete="username"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="reg-password">Password</label>
+          <input
+            class="form-input"
+            type="password"
+            id="reg-password"
+            placeholder="At least 4 characters"
+            autocomplete="new-password"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="reg-confirm">Confirm Password</label>
+          <input
+            class="form-input"
+            type="password"
+            id="reg-confirm"
+            placeholder="Repeat your password"
+            autocomplete="new-password"
+          />
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg">Create Account</button>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initAuth } from './js/auth.js';
+    initAuth();
+  </script>
+>>>>>>> d7aae94 ( Feature : Week 9 Redesign the Frontend)
 </body>
 </html>
