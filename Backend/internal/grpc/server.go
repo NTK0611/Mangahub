@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
+	"strings"
 	"time"
+	"unicode/utf8"
 
 	pb "mangahub/proto"
 
@@ -14,21 +16,17 @@ import (
 )
 
 // MangaServer implements the proto.MangaServiceServer interface.
-// It talks directly to the SQLite database so it can be embedded inside
-// the gRPC server binary independently from the HTTP API.
 type MangaServer struct {
 	pb.UnimplementedMangaServiceServer
 	db *sql.DB
 }
 
-// NewMangaServer creates a new MangaServer with the given database connection.
 func NewMangaServer(db *sql.DB) *MangaServer {
 	return &MangaServer{db: db}
 }
 
 // ─── GetManga ────────────────────────────────────────────────────────────────
 
-// GetManga returns a single manga by its ID.
 func (s *MangaServer) GetManga(ctx context.Context, req *pb.GetMangaRequest) (*pb.MangaResponse, error) {
 	if req.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "manga id is required")
@@ -36,27 +34,18 @@ func (s *MangaServer) GetManga(ctx context.Context, req *pb.GetMangaRequest) (*p
 
 	item, err := s.fetchMangaByID(req.GetId())
 	if err == sql.ErrNoRows {
-		return &pb.MangaResponse{
-			Found:   false,
-			Message: "manga not found",
-		}, nil
+		return &pb.MangaResponse{Found: false, Message: "manga not found"}, nil
 	}
 	if err != nil {
 		log.Printf("[gRPC] GetManga error: %v", err)
 		return nil, status.Error(codes.Internal, "failed to fetch manga")
 	}
 
-	return &pb.MangaResponse{
-		Manga:   item,
-		Found:   true,
-		Message: "ok",
-	}, nil
+	return &pb.MangaResponse{Manga: item, Found: true, Message: "ok"}, nil
 }
 
 // ─── SearchManga ─────────────────────────────────────────────────────────────
 
-// SearchManga returns manga matching the query, optional status filter,
-// and optional genre filter.
 func (s *MangaServer) SearchManga(ctx context.Context, req *pb.SearchRequest) (*pb.SearchResponse, error) {
 	query := "SELECT id, title, author, genres, status, total_chapters, description FROM manga WHERE 1=1"
 	args := []interface{}{}
@@ -71,7 +60,6 @@ func (s *MangaServer) SearchManga(ctx context.Context, req *pb.SearchRequest) (*
 		args = append(args, req.GetStatus())
 	}
 	if req.GetGenre() != "" {
-		// genres stored as a JSON array string, e.g. '["Action","Shounen"]'
 		query += " AND genres LIKE ?"
 		args = append(args, "%"+req.GetGenre()+"%")
 	}
@@ -97,39 +85,27 @@ func (s *MangaServer) SearchManga(ctx context.Context, req *pb.SearchRequest) (*
 		results = []*pb.MangaItem{}
 	}
 
-	return &pb.SearchResponse{
-		Manga: results,
-		Count: int32(len(results)),
-	}, nil
+	return &pb.SearchResponse{Manga: results, Count: int32(len(results))}, nil
 }
 
 // ─── UpdateProgress ──────────────────────────────────────────────────────────
 
-// UpdateProgress updates (or inserts) a user's reading progress for a manga.
-// This is the internal RPC used by other services that bypass HTTP.
 func (s *MangaServer) UpdateProgress(ctx context.Context, req *pb.ProgressRequest) (*pb.ProgressResponse, error) {
 	if req.GetUserId() == "" || req.GetMangaId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id and manga_id are required")
 	}
 
 	validStatuses := map[string]bool{
-		"reading":      true,
-		"completed":    true,
-		"plan_to_read": true,
-		"dropped":      true,
+		"reading": true, "completed": true, "plan_to_read": true, "dropped": true,
 	}
 	if req.GetStatus() != "" && !validStatuses[req.GetStatus()] {
 		return nil, status.Error(codes.InvalidArgument, "invalid status value")
 	}
 
-	// Verify the manga exists
 	var exists string
 	err := s.db.QueryRowContext(ctx, "SELECT id FROM manga WHERE id = ?", req.GetMangaId()).Scan(&exists)
 	if err == sql.ErrNoRows {
-		return &pb.ProgressResponse{
-			Success: false,
-			Message: "manga not found",
-		}, nil
+		return &pb.ProgressResponse{Success: false, Message: "manga not found"}, nil
 	}
 	if err != nil {
 		log.Printf("[gRPC] UpdateProgress manga check error: %v", err)
@@ -143,11 +119,7 @@ func (s *MangaServer) UpdateProgress(ctx context.Context, req *pb.ProgressReques
              current_chapter = excluded.current_chapter,
              status          = excluded.status,
              updated_at      = excluded.updated_at`,
-		req.GetUserId(),
-		req.GetMangaId(),
-		req.GetCurrentChapter(),
-		req.GetStatus(),
-		time.Now().UTC(),
+		req.GetUserId(), req.GetMangaId(), req.GetCurrentChapter(), req.GetStatus(), time.Now().UTC(),
 	)
 	if err != nil {
 		log.Printf("[gRPC] UpdateProgress exec error: %v", err)
@@ -157,10 +129,7 @@ func (s *MangaServer) UpdateProgress(ctx context.Context, req *pb.ProgressReques
 	log.Printf("[gRPC] Progress updated — user=%s manga=%s chapter=%d",
 		req.GetUserId(), req.GetMangaId(), req.GetCurrentChapter())
 
-	return &pb.ProgressResponse{
-		Success: true,
-		Message: "progress updated successfully",
-	}, nil
+	return &pb.ProgressResponse{Success: true, Message: "progress updated successfully"}, nil
 }
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
@@ -172,7 +141,6 @@ func (s *MangaServer) fetchMangaByID(id string) (*pb.MangaItem, error) {
 	return scanMangaRow(row)
 }
 
-// scanner is satisfied by both *sql.Row and *sql.Rows
 type scanner interface {
 	Scan(dest ...interface{}) error
 }
@@ -194,10 +162,30 @@ func scanMangaRow(s scanner) (*pb.MangaItem, error) {
 		return nil, err
 	}
 
+	// Sanitize all string fields — MangaDex data may contain invalid UTF-8
+	// which causes protobuf marshaling to fail with "string field contains invalid UTF-8"
+	item.Id = sanitizeUTF8(item.Id)
+	item.Title = sanitizeUTF8(item.Title)
+	item.Author = sanitizeUTF8(item.Author)
+	item.Status = sanitizeUTF8(item.Status)
+	item.Description = sanitizeUTF8(item.Description)
+
 	var genres []string
 	if jsonErr := json.Unmarshal([]byte(genresJSON), &genres); jsonErr == nil {
+		for i, g := range genres {
+			genres[i] = sanitizeUTF8(g)
+		}
 		item.Genres = genres
 	}
 
 	return &item, nil
+}
+
+// sanitizeUTF8 replaces any invalid UTF-8 byte sequences with the Unicode
+// replacement character so protobuf can marshal the string without errors.
+func sanitizeUTF8(s string) string {
+	if utf8.ValidString(s) {
+		return s
+	}
+	return strings.ToValidUTF8(s, "")
 }
