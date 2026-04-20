@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -17,8 +18,9 @@ type MangaDexResponse struct {
 }
 
 type MangaDexManga struct {
-	ID         string             `json:"id"`
-	Attributes MangaDexAttributes `json:"attributes"`
+	ID            string             `json:"id"`
+	Attributes    MangaDexAttributes `json:"attributes"`
+	Relationships []MangaDexRel      `json:"relationships"`
 }
 
 type MangaDexAttributes struct {
@@ -35,13 +37,26 @@ type MangaDexTag struct {
 	} `json:"attributes"`
 }
 
+type MangaDexRel struct {
+	ID         string                 `json:"id"`
+	Type       string                 `json:"type"`
+	Attributes map[string]interface{} `json:"attributes"`
+}
+
 func fetchMangaDex(offset int) (*MangaDexResponse, error) {
-	url := fmt.Sprintf(
-		"https://api.mangadex.org/manga?limit=25&offset=%d&contentRating[]=safe&contentRating[]=suggestive&includes[]=author",
+	apiURL := fmt.Sprintf(
+		"https://api.mangadex.org/manga?limit=25&offset=%d&contentRating[]=safe&contentRating[]=suggestive&includes[]=author&includes[]=cover_art",
 		offset,
 	)
 
-	resp, err := http.Get(url)
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "MangaHub/1.0")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -60,12 +75,26 @@ func fetchMangaDex(offset int) (*MangaDexResponse, error) {
 	return &result, nil
 }
 
+// extractCoverURL builds the MangaDex CDN cover URL from the relationships array.
+func extractCoverURL(mangaID string, rels []MangaDexRel) string {
+	for _, rel := range rels {
+		if rel.Type == "cover_art" && rel.Attributes != nil {
+			if fileName, ok := rel.Attributes["fileName"].(string); ok && fileName != "" {
+				return fmt.Sprintf("https://uploads.mangadex.org/covers/%s/%s.256.jpg", mangaID, fileName)
+			}
+		}
+	}
+	return ""
+}
+
 func main() {
 	db, err := sql.Open("sqlite3", "./data/mangahub.db")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
+
+	_, _ = db.Exec(`ALTER TABLE manga ADD COLUMN cover_url TEXT`)
 
 	totalInserted := 0
 	offsets := []int{0, 25, 50, 75}
@@ -80,7 +109,6 @@ func main() {
 		}
 
 		for _, m := range result.Data {
-			// Get title
 			title := m.Attributes.Title["en"]
 			if title == "" {
 				title = m.Attributes.Title["ja-ro"]
@@ -89,13 +117,11 @@ func main() {
 				continue
 			}
 
-			// Get description
 			description := m.Attributes.Description["en"]
 			if len(description) > 300 {
 				description = description[:300] + "..."
 			}
 
-			// Get genres from tags
 			var genres []string
 			for _, tag := range m.Attributes.Tags {
 				name := tag.Attributes.Name["en"]
@@ -107,28 +133,28 @@ func main() {
 				genres = []string{"Unknown"}
 			}
 
-			// Get chapter count
 			chapters := 0
 			if m.Attributes.LastChapter != "" {
 				fmt.Sscanf(m.Attributes.LastChapter, "%d", &chapters)
 			}
 
-			// Clean ID for database
+			coverURL := extractCoverURL(m.ID, m.Relationships)
+
 			cleanID := "mdx-" + strings.ReplaceAll(m.ID[:8], "-", "")
 
 			genresJSON, _ := json.Marshal(genres)
 			_, err := db.Exec(
-				`INSERT OR IGNORE INTO manga (id, title, author, genres, status, total_chapters, description)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+				`INSERT OR REPLACE INTO manga (id, title, author, genres, status, total_chapters, description, cover_url)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 				cleanID, title, "Unknown", string(genresJSON),
-				m.Attributes.Status, chapters, description,
+				m.Attributes.Status, chapters, description, coverURL,
 			)
 			if err != nil {
 				log.Printf("Failed to insert %s: %v", title, err)
 				continue
 			}
 			totalInserted++
-			log.Printf("✅ Inserted: %s", title)
+			log.Printf("✅ Inserted: %s (cover: %v)", title, coverURL != "")
 		}
 	}
 

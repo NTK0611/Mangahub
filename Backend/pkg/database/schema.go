@@ -20,7 +20,8 @@ func CreateTables(db *sql.DB) {
             genres TEXT,
             status TEXT,
             total_chapters INTEGER,
-            description TEXT
+            description TEXT,
+            cover_url TEXT
         );`,
 		`CREATE TABLE IF NOT EXISTS user_progress (
             user_id TEXT,
@@ -38,6 +39,9 @@ func CreateTables(db *sql.DB) {
 			log.Fatal("Failed to create table:", err)
 		}
 	}
+
+	// Add cover_url column if it doesn't exist (for existing databases)
+	_, _ = db.Exec(`ALTER TABLE manga ADD COLUMN cover_url TEXT`)
 
 	log.Println("✅ All tables created successfully!")
 }

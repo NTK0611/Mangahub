@@ -18,7 +18,7 @@ func GetAllManga(db *sql.DB) gin.HandlerFunc {
 		search := c.Query("search")
 		status := c.Query("status")
 
-		query := "SELECT id, title, author, genres, status, total_chapters, description FROM manga WHERE 1=1"
+		query := "SELECT id, title, author, genres, status, total_chapters, description, COALESCE(cover_url,'') FROM manga WHERE 1=1"
 		args := []interface{}{}
 
 		if search != "" {
@@ -41,7 +41,7 @@ func GetAllManga(db *sql.DB) gin.HandlerFunc {
 		for rows.Next() {
 			var m models.Manga
 			var genresJSON string
-			if err := rows.Scan(&m.ID, &m.Title, &m.Author, &genresJSON, &m.Status, &m.TotalChapters, &m.Description); err != nil {
+			if err := rows.Scan(&m.ID, &m.Title, &m.Author, &genresJSON, &m.Status, &m.TotalChapters, &m.Description, &m.CoverURL); err != nil {
 				continue
 			}
 			json.Unmarshal([]byte(genresJSON), &m.Genres)
@@ -63,8 +63,8 @@ func GetMangaByID(db *sql.DB) gin.HandlerFunc {
 		var m models.Manga
 		var genresJSON string
 		err := db.QueryRow(
-			"SELECT id, title, author, genres, status, total_chapters, description FROM manga WHERE id = ?", id,
-		).Scan(&m.ID, &m.Title, &m.Author, &genresJSON, &m.Status, &m.TotalChapters, &m.Description)
+			"SELECT id, title, author, genres, status, total_chapters, description, COALESCE(cover_url,'') FROM manga WHERE id = ?", id,
+		).Scan(&m.ID, &m.Title, &m.Author, &genresJSON, &m.Status, &m.TotalChapters, &m.Description, &m.CoverURL)
 
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Manga not found"})
@@ -80,12 +80,8 @@ func GetMangaByID(db *sql.DB) gin.HandlerFunc {
 	}
 }
 
-// ── gRPC-backed handlers (HTTP → gRPC → SQLite) ───────────────────────────────
-//
-// These handlers route manga queries through the gRPC MangaService, demonstrating
-// the HTTP ↔ gRPC integration required by the project spec.
+// ── gRPC-backed handlers ──────────────────────────────────────────────────────
 
-// GetAllMangaGRPC handles GET /manga with search/status/genre filters via gRPC.
 func GetAllMangaGRPC(grpcClient *grpcint.MangaClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		search := c.Query("search")
@@ -108,18 +104,14 @@ func GetAllMangaGRPC(grpcClient *grpcint.MangaClient) gin.HandlerFunc {
 				Status:        item.Status,
 				TotalChapters: int(item.TotalChapters),
 				Description:   item.Description,
+				CoverURL:      item.CoverUrl,
 			})
 		}
 
-		c.JSON(http.StatusOK, gin.H{
-			"data":   mangaList,
-			"count":  count,
-			"source": "grpc", // shows the request was routed through gRPC
-		})
+		c.JSON(http.StatusOK, gin.H{"data": mangaList, "count": count, "source": "grpc"})
 	}
 }
 
-// GetMangaByIDGRPC handles GET /manga/:id via gRPC.
 func GetMangaByIDGRPC(grpcClient *grpcint.MangaClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
@@ -142,6 +134,7 @@ func GetMangaByIDGRPC(grpcClient *grpcint.MangaClient) gin.HandlerFunc {
 			Status:        item.Status,
 			TotalChapters: int(item.TotalChapters),
 			Description:   item.Description,
+			CoverURL:      item.CoverUrl,
 		}
 		c.JSON(http.StatusOK, m)
 	}
