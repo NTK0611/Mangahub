@@ -70,6 +70,7 @@ async function loadManga() {
   try {
     const data = await apiGetManga();
     allManga = Array.isArray(data) ? data : (data.data || []);
+    window._allManga = allManga; // debug
     renderGrid();
   } catch (err) {
     grid.innerHTML = `
@@ -183,10 +184,16 @@ function continueCardHTML(p) {
     ? Math.min(100, Math.round((p.current_chapter / p.total_chapters) * 100))
     : 0;
 
+  // Look up cover from already-loaded manga list
+  const manga = allManga.find(m => m.id === p.manga_id);
+  const coverUrl = manga?.cover_url || '';
+
   return `
     <div class="manga-card" onclick="goToManga('${p.manga_id}')">
       <div class="manga-card-cover">
-        <div class="cover-placeholder">📖</div>
+        ${coverUrl
+          ? `<img src="${coverUrl}" alt="${escHtml(p.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=cover-placeholder>📖</div>'" />`
+          : '<div class="cover-placeholder">📖</div>'}
         <span class="manga-status-badge status-ongoing">Ch.${p.current_chapter}</span>
       </div>
       <div class="manga-card-info">
