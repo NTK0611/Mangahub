@@ -60,15 +60,15 @@
   - Resolved JSON binding and cross-protocol communication bugs
 
 # Week 9: Frontend & API Documentation
-  - Single-page application (Frontend/index.html) — no framework, vanilla JS
-  - Auth page with Login/Register forms, JWT storage, demo mode fallback
-  - Browse page — manga grid with live search, genre chip filters, status filter
-  - Manga detail modal — metadata, add to library (Reading/Plan/Completed), chapter progress updater
-  - My Library page — three tabs with reading progress bars and chapter tracking
-  - Chat page — WebSocket chat UI with connect/disconnect, live message feed, send on Enter
-  - System Status page — health indicators for all 5 protocols with endpoint reference cards
-  - API documentation page (Frontend/api-docs.html)
-    - Sticky sidebar with scrollspy for all 5 protocol sections
-    - Collapsible endpoint cards with request/response schemas and parameter tables
-    - Syntax-highlighted code blocks with copy buttons
+  Vanilla HTML/CSS/JS single-page application (no framework, no build tools)
+- Served statically by the Go API server at http://localhost:8080/
+- JWT authentication — login/register with token stored in localStorage
+- Browse & Discover page — manga grid with live search and genre filter tabs
+- Manga detail page — cover image, metadata, add to library, update reading progress
+- Live WebSocket chat — one room per manga, auto-reconnects on disconnect
+- My Library page — reading list with status tabs, progress bars, quick +1 chapter update
+- Toast notification system for all API events and WebSocket messages
+- Cover images fetched from MangaDex CDN and stored in database
+- Backend updated: cover_url column added, gRPC probe fix for graceful fallback to SQLite
+
     
