@@ -3,8 +3,10 @@
  * Auto-attaches JWT, handles errors, shows toasts.
  */
 
-// Auto-detect: empty string when served by Go backend (same origin), fallback for standalone dev
-const API_BASE = (window.location.hostname === 'localhost' && window.location.port === '8080') ? '' : 'http://localhost:8080';
+// Auto-detect: use production URL when not on localhost
+const API_BASE = window.location.hostname === 'localhost'
+  ? 'http://localhost:8080'
+  : 'https://mangahub-whua.onrender.com';
 
 // ── JWT helpers ───────────────────────────────────────────────────────────
 export function getToken() {
@@ -141,8 +143,10 @@ export async function apiHealth() {
 // ── WebSocket URL builder ─────────────────────────────────────────────────
 export function wsUrl(roomId) {
   const token = getToken();
-  const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const wsHost = (window.location.hostname === 'localhost' && window.location.port === '8080') ? window.location.host : 'localhost:8080';
+  const wsProto = window.location.hostname === 'localhost' ? 'ws:' : 'wss:';
+  const wsHost = window.location.hostname === 'localhost'
+    ? 'localhost:8080'
+    : 'mangahub-whua.onrender.com';
   return `${wsProto}//${wsHost}/ws/chat/${roomId}?token=${token}`;
 }
 
