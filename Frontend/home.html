@@ -125,17 +125,41 @@
       const modal = document.getElementById('health-modal');
       const body  = document.getElementById('health-modal-body');
       modal.style.display = 'flex';
+      body.innerHTML = '<div class="loading-spinner"></div>';
 
       try {
         const data = await apiHealth();
+        const services = Array.isArray(data.services) ? data.services : [];
+
         body.innerHTML = `
           <div style="display:flex;flex-direction:column;gap:10px">
-            ${Object.entries(data).map(([k, v]) => `
+            <!-- Overall status -->
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg-card);border-radius:var(--radius-md);border:1px solid var(--border)">
+              <span style="font-weight:600;font-family:'Rajdhani',sans-serif">Overall Status</span>
+              <span class="stat-chip ${data.status === 'healthy' ? 'green' : 'orange'}">${data.status}</span>
+            </div>
+
+            <!-- Divider -->
+            <div style="font-size:0.72rem;color:var(--text-muted);padding:0 4px;letter-spacing:0.05em;text-transform:uppercase">Services</div>
+
+            <!-- Each service -->
+            ${services.map(s => `
               <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg-card);border-radius:var(--radius-md);border:1px solid var(--border)">
-                <span style="font-weight:600;font-family:'Rajdhani',sans-serif">${k}</span>
-                <span class="stat-chip ${v === 'ok' || v === true ? 'green' : 'orange'}">${v}</span>
+                <div>
+                  <div style="font-weight:600;font-family:'Rajdhani',sans-serif;font-size:0.95rem">${s.name}</div>
+                  ${s.details ? `<div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px">${s.details}</div>` : ''}
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  ${s.port ? `<span style="font-size:0.72rem;color:var(--text-muted)">:${s.port}</span>` : ''}
+                  <span class="stat-chip ${s.status === 'up' ? 'green' : 'orange'}">${s.status}</span>
+                </div>
               </div>
             `).join('')}
+
+            <!-- Timestamp -->
+            <div style="font-size:0.72rem;color:var(--text-muted);text-align:right;padding:0 4px">
+              Last checked: ${new Date(data.timestamp * 1000).toLocaleTimeString()}
+            </div>
           </div>
         `;
       } catch (err) {
@@ -145,6 +169,13 @@
 
     document.getElementById('health-modal-close')?.addEventListener('click', () => {
       document.getElementById('health-modal').style.display = 'none';
+    });
+
+    // Close modal on backdrop click
+    document.getElementById('health-modal')?.addEventListener('click', (e) => {
+      if (e.target === document.getElementById('health-modal')) {
+        document.getElementById('health-modal').style.display = 'none';
+      }
     });
 
     // Mobile menu
