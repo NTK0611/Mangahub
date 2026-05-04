@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"mangahub/data"
 	"mangahub/internal/auth"
 	grpcint "mangahub/internal/grpc"
 	"mangahub/internal/health"
@@ -29,6 +30,9 @@ func main() {
 	defer db.Close()
 	database.CreateTables(db)
 
+	// ── Auto-seed if database is empty ────────────────────────────────────────
+	go data.AutoSeed(db)
+
 	// ── TCP Progress Sync Server ──────────────────────────────────────────────
 	tcpServer := tcp.NewTCPServer(getEnv("TCP_PORT", "9090"))
 	go tcpServer.Start()
@@ -42,7 +46,6 @@ func main() {
 	go hub.Run()
 
 	// ── gRPC Client (optional — system degrades gracefully if gRPC is down) ───
-	// Give the gRPC server a moment to start if launched concurrently.
 	time.Sleep(500 * time.Millisecond)
 
 	grpcAddr := getEnv("GRPC_ADDR", "localhost:50051")
@@ -51,7 +54,14 @@ func main() {
 		log.Printf("⚠️  gRPC client unavailable (%v) — manga routes will use direct DB", grpcErr)
 		grpcClient = nil
 	} else {
-		defer grpcClient.Close()
+		// grpc.NewClient is lazy — probe with a real call to confirm the server is actually up.
+		if probeErr := grpcClient.Probe(); probeErr != nil {
+			log.Printf("⚠️  gRPC server unreachable (%v) — manga routes will use direct DB", probeErr)
+			grpcClient.Close()
+			grpcClient = nil
+		} else {
+			defer grpcClient.Close()
+		}
 	}
 
 	// ── HTTP Router ───────────────────────────────────────────────────────────
@@ -59,8 +69,6 @@ func main() {
 	r.Use(corsMiddleware())
 
 	// ── Static Frontend ───────────────────────────────────────────────────────
-	// Serve the Week 9 frontend from the adjacent Frontend/ directory.
-	// Accessing http://localhost:8080/ will load index.html (login page).
 	frontendPath := getEnv("FRONTEND_PATH", "../Frontend")
 	r.StaticFile("/", frontendPath+"/index.html")
 	r.StaticFile("/index.html", frontendPath+"/index.html")
@@ -78,9 +86,7 @@ func main() {
 		})
 	})
 
-	// Health endpoint — shows status of all 5 protocols at once.
 	r.GET("/health", health.HealthCheck(db, tcpServer, udpServer, hub, grpcClient))
-
 	r.POST("/auth/register", auth.Register(db))
 	r.POST("/auth/login", auth.Login(db))
 
@@ -88,8 +94,6 @@ func main() {
 	protected := r.Group("/")
 	protected.Use(auth.JWTMiddleware())
 	{
-		// Manga — route through gRPC when available, fall back to direct DB.
-		// This demonstrates HTTP ↔ gRPC protocol integration.
 		if grpcClient != nil {
 			log.Println("📡 Manga routes: HTTP → gRPC → SQLite")
 			protected.GET("/manga", manga.GetAllMangaGRPC(grpcClient))
@@ -100,22 +104,15 @@ func main() {
 			protected.GET("/manga/:id", manga.GetMangaByID(db))
 		}
 
-		// Library / progress
 		protected.POST("/users/library", user.AddToLibrary(db))
 		protected.GET("/users/library", user.GetLibrary(db))
-
-		// Progress update fans out to TCP + UDP automatically.
 		protected.PUT("/users/progress", user.UpdateProgress(db, tcpServer, udpServer))
-
-		// Manual notification trigger (for demo purposes)
 		protected.POST("/notifications/send", udp.SendNotification(udpServer))
-
-		// WebSocket room info (REST)
 		protected.GET("/ws/rooms", ws.GetRooms(hub))
 		protected.GET("/ws/rooms/:room_id", ws.GetRoomInfo(hub))
 	}
 
-	// ── WebSocket routes (JWT via ?token= query param) ────────────────────────
+	// ── WebSocket routes ──────────────────────────────────────────────────────
 	wsGroup := r.Group("/ws")
 	wsGroup.Use(ws.WSAuthMiddleware())
 	{
@@ -147,7 +144,6 @@ func main() {
 		}
 	}()
 
-	// Block until SIGINT / SIGTERM
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
@@ -162,7 +158,6 @@ func main() {
 	log.Println("✅ API server stopped gracefully")
 }
 
-// corsMiddleware allows all origins (suitable for development / demo).
 func corsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")

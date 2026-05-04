@@ -3,6 +3,7 @@ package auth
 import (
 	"database/sql"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +12,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var JWTSecret = []byte("your-secret-key")
+var JWTSecret = []byte(getEnv("JWT_SECRET", "your-secret-key"))
+
+func getEnv(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}
 
 type RegisterRequest struct {
 	Username string `json:"username" binding:"required"`
