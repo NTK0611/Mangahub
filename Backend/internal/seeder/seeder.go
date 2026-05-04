@@ -1,4 +1,4 @@
-package data
+package seeder
 
 import (
 	"database/sql"
@@ -97,20 +97,19 @@ func seedManual(db *sql.DB) {
 	}
 
 	log.Println("🔍 Fetching cover URLs for manual seed...")
-	for i := range entries {
-		entries[i].Description = entries[i].Description // no-op, keep description
-		coverURL := fetchCoverURLByTitle(entries[i].Title)
-		genresJSON, _ := json.Marshal(entries[i].Genres)
+	for _, e := range entries {
+		coverURL := fetchCoverURLByTitle(e.Title)
+		genresJSON, _ := json.Marshal(e.Genres)
 		db.Exec(
 			`INSERT OR REPLACE INTO manga (id, title, author, genres, status, total_chapters, description, cover_url)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-			entries[i].ID, entries[i].Title, entries[i].Author, string(genresJSON),
-			entries[i].Status, entries[i].TotalChapters, entries[i].Description, coverURL,
+			e.ID, e.Title, e.Author, string(genresJSON),
+			e.Status, e.TotalChapters, e.Description, coverURL,
 		)
 		if coverURL != "" {
-			log.Printf("  ✅ %s → cover found", entries[i].Title)
+			log.Printf("  ✅ %s → cover found", e.Title)
 		} else {
-			log.Printf("  ⚠  %s → no cover", entries[i].Title)
+			log.Printf("  ⚠  %s → no cover", e.Title)
 		}
 	}
 }
@@ -150,28 +149,6 @@ func fetchCoverURLByTitle(title string) string {
 
 // ── MangaDex seed (100 manga from API) ───────────────────────────────────
 
-type mdexResponse struct {
-	Data []struct {
-		ID         string `json:"id"`
-		Attributes struct {
-			Title       map[string]string `json:"title"`
-			Description map[string]string `json:"description"`
-			Status      string            `json:"status"`
-			Tags        []struct {
-				Attributes struct {
-					Name map[string]string `json:"name"`
-				} `json:"attributes"`
-			} `json:"tags"`
-			LastChapter string `json:"lastChapter"`
-		} `json:"attributes"`
-		Relationships []struct {
-			ID         string                 `json:"id"`
-			Type       string                 `json:"type"`
-			Attributes map[string]interface{} `json:"attributes"`
-		} `json:"relationships"`
-	} `json:"data"`
-}
-
 func seedMangaDex(db *sql.DB) {
 	offsets := []int{0, 25, 50, 75}
 	total := 0
@@ -187,7 +164,27 @@ func seedMangaDex(db *sql.DB) {
 			continue
 		}
 
-		var result mdexResponse
+		var result struct {
+			Data []struct {
+				ID         string `json:"id"`
+				Attributes struct {
+					Title       map[string]string `json:"title"`
+					Description map[string]string `json:"description"`
+					Status      string            `json:"status"`
+					Tags        []struct {
+						Attributes struct {
+							Name map[string]string `json:"name"`
+						} `json:"attributes"`
+					} `json:"tags"`
+					LastChapter string `json:"lastChapter"`
+				} `json:"attributes"`
+				Relationships []struct {
+					Type       string                 `json:"type"`
+					Attributes map[string]interface{} `json:"attributes"`
+				} `json:"relationships"`
+			} `json:"data"`
+		}
+
 		if err := json.Unmarshal(body, &result); err != nil {
 			continue
 		}
@@ -221,7 +218,6 @@ func seedMangaDex(db *sql.DB) {
 				fmt.Sscanf(m.Attributes.LastChapter, "%d", &chapters)
 			}
 
-			// Extract cover from relationships
 			coverURL := ""
 			for _, rel := range m.Relationships {
 				if rel.Type == "cover_art" && rel.Attributes != nil {
@@ -233,7 +229,7 @@ func seedMangaDex(db *sql.DB) {
 			}
 
 			if coverURL == "" {
-				continue // skip manga without cover
+				continue
 			}
 
 			cleanID := "mdx-" + strings.ReplaceAll(m.ID[:8], "-", "")
@@ -247,7 +243,7 @@ func seedMangaDex(db *sql.DB) {
 			)
 			total++
 		}
-		log.Printf("  📦 MangaDex offset %d — processed", offset)
+		log.Printf("  📦 MangaDex offset %d processed", offset)
 	}
 	log.Printf("  ✅ MangaDex seed done — %d manga added", total)
 }

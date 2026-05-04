@@ -9,11 +9,11 @@ import (
 	"syscall"
 	"time"
 
-	"mangahub/data"
 	"mangahub/internal/auth"
 	grpcint "mangahub/internal/grpc"
 	"mangahub/internal/health"
 	"mangahub/internal/manga"
+	"mangahub/internal/seeder"
 	"mangahub/internal/tcp"
 	"mangahub/internal/udp"
 	"mangahub/internal/user"
@@ -31,7 +31,7 @@ func main() {
 	database.CreateTables(db)
 
 	// ── Auto-seed if database is empty ────────────────────────────────────────
-	go data.AutoSeed(db)
+	go seeder.AutoSeed(db)
 
 	// ── TCP Progress Sync Server ──────────────────────────────────────────────
 	tcpServer := tcp.NewTCPServer(getEnv("TCP_PORT", "9090"))
@@ -54,7 +54,6 @@ func main() {
 		log.Printf("⚠️  gRPC client unavailable (%v) — manga routes will use direct DB", grpcErr)
 		grpcClient = nil
 	} else {
-		// grpc.NewClient is lazy — probe with a real call to confirm the server is actually up.
 		if probeErr := grpcClient.Probe(); probeErr != nil {
 			log.Printf("⚠️  gRPC server unreachable (%v) — manga routes will use direct DB", probeErr)
 			grpcClient.Close()

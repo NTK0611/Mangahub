@@ -19,11 +19,6 @@ type MangaClient struct {
 }
 
 // NewMangaClient dials the gRPC server and returns a ready-to-use client.
-//
-// Example:
-//
-//	c, err := grpc.NewMangaClient("localhost:50051")
-//	defer c.Close()
 func NewMangaClient(address string) (*MangaClient, error) {
 	conn, err := grpc.NewClient(
 		address,
@@ -45,6 +40,15 @@ func (c *MangaClient) Close() {
 	if c.conn != nil {
 		c.conn.Close()
 	}
+}
+
+// Probe sends a minimal SearchManga request to verify the gRPC server is
+// actually reachable. Used at startup to decide whether to use gRPC or SQLite.
+func (c *MangaClient) Probe() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	_, err := c.client.SearchManga(ctx, &pb.SearchRequest{Query: "", Status: "", Genre: ""})
+	return err
 }
 
 // ─── Wrapper methods ──────────────────────────────────────────────────────────
