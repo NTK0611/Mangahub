@@ -191,4 +191,10 @@ export function showToast(title, msg = '', type = 'info', duration = 4000) {
 
   toast.addEventListener('click', remove);
   setTimeout(remove, duration);
+  // Keep Render backend alive — ping every 10 minutes
+if (window.location.hostname !== 'localhost') {
+  setInterval(() => {
+    fetch(`${API_BASE}/health`).catch(() => {});
+  }, 10 * 60 * 1000);
+}
 }
