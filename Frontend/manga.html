@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="referrer" content="no-referrer" />
   <title>Manga Detail — MangaHub</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <div class="app-shell">
-    <!-- ── Sidebar ─────────────────────────────────────── -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-logo">
         <div class="logo-icon">📚</div>
@@ -39,7 +39,6 @@
       </div>
     </aside>
 
-    <!-- ── Main Content ────────────────────────────────── -->
     <main class="main-content">
       <header class="page-header">
         <div style="display:flex;align-items:center;gap:12px">
@@ -50,16 +49,13 @@
       </header>
 
       <div class="page-body">
-        <!-- Manga detail injected here -->
         <div id="manga-detail">
           <div class="loading-spinner"></div>
         </div>
 
-        <!-- Two-column layout: info + chat -->
         <div style="display:grid;grid-template-columns:1fr 380px;gap:24px;margin-top:4px" id="chat-column-wrap">
-          <div><!-- placeholder --></div>
+          <div></div>
 
-          <!-- Live Chat Panel -->
           <div>
             <div class="section-header" style="margin-bottom:12px">
               <div class="section-title">Live Chat</div>
@@ -77,14 +73,7 @@
               </div>
 
               <form class="chat-input-wrap" id="chat-form">
-                <input
-                  type="text"
-                  class="chat-input"
-                  id="chat-input"
-                  placeholder="Say something…"
-                  maxlength="500"
-                  autocomplete="off"
-                />
+                <input type="text" class="chat-input" id="chat-input" placeholder="Say something…" maxlength="500" autocomplete="off" />
                 <button type="submit" class="chat-send-btn">Send</button>
               </form>
             </div>
@@ -94,7 +83,6 @@
     </main>
   </div>
 
-  <!-- ── Update Progress Modal ──────────────────────────────── -->
   <div id="progress-modal" class="modal-overlay" style="display:none">
     <div class="modal">
       <div class="modal-header">
@@ -109,7 +97,6 @@
             <span style="color:var(--text-muted);font-size:0.85rem" id="pm-total"></span>
           </div>
         </div>
-
         <div class="form-group">
           <label class="form-label">Status</label>
           <select class="form-input form-select" id="pm-status">
@@ -135,10 +122,9 @@
 
     initMangaDetail();
 
-    // Progress modal controls
-    const modal   = document.getElementById('progress-modal');
-    const closeEl = [document.getElementById('pm-close'), document.getElementById('pm-cancel')];
-    closeEl.forEach(el => el?.addEventListener('click', () => modal.style.display = 'none'));
+    const modal = document.getElementById('progress-modal');
+    [document.getElementById('pm-close'), document.getElementById('pm-cancel')]
+      .forEach(el => el?.addEventListener('click', () => modal.style.display = 'none'));
 
     modal?.addEventListener('click', (e) => {
       if (e.target === modal) modal.style.display = 'none';
@@ -147,8 +133,7 @@
     document.getElementById('pm-save')?.addEventListener('click', async () => {
       const chapter = parseInt(document.getElementById('pm-chapter').value) || 0;
       const status  = document.getElementById('pm-status').value;
-      const params  = new URLSearchParams(window.location.search);
-      const id      = params.get('id');
+      const id      = new URLSearchParams(window.location.search).get('id');
       if (!id) return;
 
       const btn = document.getElementById('pm-save');
@@ -159,7 +144,6 @@
         await apiUpdateProgress(id, chapter, status);
         showToast('Progress updated!', `Chapter ${chapter} · ${status}`, 'success');
         modal.style.display = 'none';
-        // Reload page state
         setTimeout(() => window.location.reload(), 800);
       } catch (err) {
         showToast('Error', err.message, 'error');
@@ -169,18 +153,12 @@
       }
     });
 
-    // Sidebar logout
     document.getElementById('btn-logout')?.addEventListener('click', logout);
 
-    // Reflow chat column below content on small screens
     function reflowLayout() {
       const wrap = document.getElementById('chat-column-wrap');
       if (!wrap) return;
-      if (window.innerWidth < 1000) {
-        wrap.style.gridTemplateColumns = '1fr';
-      } else {
-        wrap.style.gridTemplateColumns = '1fr 380px';
-      }
+      wrap.style.gridTemplateColumns = window.innerWidth < 1000 ? '1fr' : '1fr 380px';
     }
     reflowLayout();
     window.addEventListener('resize', reflowLayout);
