@@ -6,7 +6,7 @@
 // Auto-detect: use production URL when not on localhost
 const API_BASE = window.location.hostname === 'localhost'
   ? 'http://localhost:8080'
-  : 'https://mangahub-whua.onrender.com';
+  : 'https://mangahub-production.up.railway.app';
 
 // ── JWT helpers ───────────────────────────────────────────────────────────
 export function getToken() {
@@ -146,7 +146,7 @@ export function wsUrl(roomId) {
   const wsProto = window.location.hostname === 'localhost' ? 'ws:' : 'wss:';
   const wsHost = window.location.hostname === 'localhost'
     ? 'localhost:8080'
-    : 'mangahub-whua.onrender.com';
+    : 'mangahub-production.up.railway.app';
   return `${wsProto}//${wsHost}/ws/chat/${roomId}?token=${token}`;
 }
 
@@ -191,10 +191,10 @@ export function showToast(title, msg = '', type = 'info', duration = 4000) {
 
   toast.addEventListener('click', remove);
   setTimeout(remove, duration);
-  // Keep Render backend alive — ping every 10 minutes
-if (window.location.hostname !== 'localhost') {
-  setInterval(() => {
-    fetch(`${API_BASE}/health`).catch(() => {});
-  }, 10 * 60 * 1000);
-}
+  // Keep Railway backend alive — ping every 10 minutes
+  if (window.location.hostname !== 'localhost') {
+    setInterval(() => {
+      fetch(`${API_BASE}/health`).catch(() => {});
+    }, 10 * 60 * 1000);
+  }
 }
