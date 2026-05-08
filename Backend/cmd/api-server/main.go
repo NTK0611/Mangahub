@@ -123,7 +123,7 @@ func main() {
 		Addr:         ":" + getEnv("HTTP_PORT", "8080"),
 		Handler:      r,
 		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
+		WriteTimeout: 0, // no timeout — required for WebSocket
 		IdleTimeout:  60 * time.Second,
 	}
 
