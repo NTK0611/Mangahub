@@ -2,18 +2,21 @@ package websocket
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 )
 
-// jwtSecret must match the one used in internal/auth/auth.go
-var jwtSecret = []byte("your-secret-key")
+var jwtSecret = []byte(getEnvWS("JWT_SECRET", "your-secret-key"))
 
-// WSAuthMiddleware validates JWT from query param ?token=<jwt>
-// because browsers cannot set Authorization headers in WebSocket connections.
-//
-// Usage: GET /ws/chat/:room_id?token=<jwt_token>
+func getEnvWS(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}
+
 func WSAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString := c.Query("token")
