@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	grpcserver "mangahub/internal/grpc"
+	"mangahub/internal/seeder"
 	"mangahub/pkg/database"
 	pb "mangahub/proto"
 
@@ -22,15 +23,14 @@ const (
 )
 
 func main() {
-	// Allow overriding defaults via environment variables
 	port := getEnv("GRPC_PORT", defaultPort)
 	dbPath := getEnv("DB_PATH", defaultDBPath)
 
 	// ── Database ──────────────────────────────────────────────────────────────
 	db := database.InitDB(dbPath)
 	defer db.Close()
-
 	database.CreateTables(db)
+	go seeder.AutoSeed(db)
 
 	// ── gRPC server ───────────────────────────────────────────────────────────
 	lis, err := net.Listen("tcp", ":"+port)
@@ -39,15 +39,11 @@ func main() {
 	}
 
 	grpcSrv := grpc.NewServer(
-		// Add interceptors here in the future (logging, auth, etc.)
 		grpc.UnaryInterceptor(loggingInterceptor),
 	)
 
-	// Register our MangaService implementation
 	mangaServer := grpcserver.NewMangaServer(db)
 	pb.RegisterMangaServiceServer(grpcSrv, mangaServer)
-
-	// Register reflection service so tools like grpcurl work out of the box
 	reflection.Register(grpcSrv)
 
 	log.Printf("🚀 gRPC server listening on port %s", port)
@@ -69,7 +65,6 @@ func main() {
 	log.Println("✅ gRPC server stopped")
 }
 
-// loggingInterceptor logs every incoming unary RPC call.
 func loggingInterceptor(
 	ctx context.Context,
 	req interface{},
